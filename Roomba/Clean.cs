@@ -125,13 +125,13 @@ namespace Roomba
             done = false;
             path.Clear();
             rest--;
-            for (int i = x; i > 0; i--)
+            for (int i = 15; i > 0; i--)
             {
                 if (done)
                 {
                     break;
                 }
-                for (int j = y; j > 0; j--)
+                for (int j = 12; j > 0; j--)
                 {
                     if (map[i, j])
                     {
@@ -172,10 +172,9 @@ namespace Roomba
                     done = true;
                     a = point[0];
                     b = point[1];
-                    path.Clear();
-                    while (tempPath.Any())
+                    lock (path)
                     {
-                        path.Push(tempPath.Pop());
+                        path = tempPath;
                     }
                 }
             }
