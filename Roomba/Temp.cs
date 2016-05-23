@@ -240,7 +240,7 @@ namespace Roomba
                     }
                 }
             }
-            foreach (Point p in pointList.OrderByDescending(o=>o.directionStack))
+            foreach (Point p in pointList.OrderByDescending(o=>o.directionStack.Count))
             {
                 _pointStack.Push(p);
             }
