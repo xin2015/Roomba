@@ -410,26 +410,30 @@ namespace Roomba
         {
             int result;
             forLoop.Push(new int[] { a, b });
+            map[a, b] = false;
             int[] point;
             while (forLoop.Any())
             {
                 point = forLoop.Pop();
-                map[point[0], point[1]] = false;
                 if (map[point[0] - 1, point[1]])
                 {
                     forLoop.Push(new int[] { point[0] - 1, point[1] });
+                    map[point[0] - 1, point[1]] = false;
                 }
                 if (map[point[0] + 1, point[1]])
                 {
                     forLoop.Push(new int[] { point[0] + 1, point[1] });
+                    map[point[0] + 1, point[1]] = false;
                 }
                 if (map[point[0], point[1] - 1])
                 {
                     forLoop.Push(new int[] { point[0], point[1] - 1 });
+                    map[point[0], point[1] - 1] = false;
                 }
                 if (map[point[0], point[1] + 1])
                 {
                     forLoop.Push(new int[] { point[0], point[1] + 1 });
+                    map[point[0], point[1] + 1] = false;
                 }
                 forCount.Push(point);
             }
