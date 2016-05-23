@@ -146,7 +146,8 @@ namespace Roomba
             Point point;
             bool[,] copyMap;
             Stack<char> copyPath = new Stack<char>();
-            Stack<int[]> road = new Stack<int[]>(), forCount = new Stack<int[]>(), forLoop = new Stack<int[]>();
+            Stack<int[]> road = new Stack<int[]>(), forCount = new Stack<int[]>();
+            Queue<int[]> forLoop = new Queue<int[]>();
             while (!_done)
             {
                 lock (_pointStack)
@@ -193,7 +194,7 @@ namespace Roomba
             }
         }
 
-        private static bool Test(bool[,] map, int rest, Stack<char> path, Point point, Stack<int[]> road, Stack<int[]> forCount, Stack<int[]> forLoop)
+        private static bool Test(bool[,] map, int rest, Stack<char> path, Point point, Stack<int[]> road, Stack<int[]> forCount, Queue<int[]> forLoop)
         {
             bool result = false;
             char direction;
@@ -406,33 +407,33 @@ namespace Roomba
             }
         }
 
-        private static int Connect(bool[,] map, int a, int b, Stack<int[]> forCount, Stack<int[]> forLoop)
+        private static int Connect(bool[,] map, int a, int b, Stack<int[]> forCount, Queue<int[]> forLoop)
         {
             int result;
-            forLoop.Push(new int[] { a, b });
+            forLoop.Enqueue(new int[] { a, b });
             map[a, b] = false;
             int[] point;
             while (forLoop.Any())
             {
-                point = forLoop.Pop();
+                point = forLoop.Dequeue();
                 if (map[point[0] - 1, point[1]])
                 {
-                    forLoop.Push(new int[] { point[0] - 1, point[1] });
+                    forLoop.Enqueue(new int[] { point[0] - 1, point[1] });
                     map[point[0] - 1, point[1]] = false;
                 }
                 if (map[point[0] + 1, point[1]])
                 {
-                    forLoop.Push(new int[] { point[0] + 1, point[1] });
+                    forLoop.Enqueue(new int[] { point[0] + 1, point[1] });
                     map[point[0] + 1, point[1]] = false;
                 }
                 if (map[point[0], point[1] - 1])
                 {
-                    forLoop.Push(new int[] { point[0], point[1] - 1 });
+                    forLoop.Enqueue(new int[] { point[0], point[1] - 1 });
                     map[point[0], point[1] - 1] = false;
                 }
                 if (map[point[0], point[1] + 1])
                 {
-                    forLoop.Push(new int[] { point[0], point[1] + 1 });
+                    forLoop.Enqueue(new int[] { point[0], point[1] + 1 });
                     map[point[0], point[1] + 1] = false;
                 }
                 forCount.Push(point);
