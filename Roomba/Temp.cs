@@ -212,6 +212,7 @@ namespace Roomba
             _path.Clear();
             _restInit = _rest - 1;
             Point point;
+            List<Point> pointList = new List<Point>();
             for (int i = x; i > 0; i--)
             {
                 for (int j = y; j > 0; j--)
@@ -235,9 +236,13 @@ namespace Roomba
                         {
                             point.directionStack.Push('r');
                         }
-                        _pointStack.Push(point);
+                        pointList.Add(point);
                     }
                 }
+            }
+            foreach (Point p in pointList.OrderByDescending(o=>o.directionStack))
+            {
+                _pointStack.Push(p);
             }
             for (int i = 0; i < _threadCount; i++)
             {
