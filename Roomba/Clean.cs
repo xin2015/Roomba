@@ -147,8 +147,7 @@ namespace Roomba
             Point point;
             bool[,] copyMap;
             Stack<char> copyPath = new Stack<char>();
-            Stack<int[]> road = new Stack<int[]>(), forCount = new Stack<int[]>();
-            Queue<int[]> forLoop = new Queue<int[]>();
+            Stack<int[]> road = new Stack<int[]>(), list = new Stack<int[]>();
             while (!_done)
             {
                 lock (_pointStack)
@@ -164,7 +163,7 @@ namespace Roomba
                 }
                 copyMap = CopyMap();
                 copyMap[point.x, point.y] = false;
-                if (Test(copyMap, _restInit, copyPath, point, road, forCount, forLoop))
+                if (Test(copyMap, _restInit, copyPath, point, road, list))
                 {
                     _done = true;
                     _a = point.x;
@@ -195,12 +194,12 @@ namespace Roomba
             }
         }
 
-        private static bool Test(bool[,] map, int rest, Stack<char> path, Point point, Stack<int[]> road, Stack<int[]> forCount, Queue<int[]> forLoop)
+        private static bool Test(bool[,] map, int rest, Stack<char> path, Point point, Stack<int[]> road, Stack<int[]> list)
         {
             bool result = false;
             char direction;
             int[] currentPoint, tempPoint;
-            int pathCount = path.Count, roadCount = road.Count;
+            int pathCount = path.Count, roadCount = road.Count, count;
             while (point.directionStack.Any())
             {
                 direction = point.directionStack.Pop();
@@ -213,7 +212,14 @@ namespace Roomba
                         {
                             if (map[currentPoint[0], currentPoint[1] - 1])
                             {
-                                if (Connect(map, currentPoint[0], currentPoint[1] - 1, forCount, forLoop) == rest && Test(map, rest, path, new Point(currentPoint[0], currentPoint[1], _lr), road, forCount, forLoop))
+                                ConnectL(map, currentPoint[0], currentPoint[1] - 1, list);
+                                count = list.Count;
+                                while (list.Any())
+                                {
+                                    tempPoint = list.Pop();
+                                    map[tempPoint[0], tempPoint[1]] = true;
+                                }
+                                if (count == rest && Test(map, rest, path, new Point(currentPoint[0], currentPoint[1], _lr), road, list))
                                 {
                                     result = true;
                                 }
@@ -232,7 +238,14 @@ namespace Roomba
                         {
                             if (map[currentPoint[0] - 1, currentPoint[1]])
                             {
-                                if (Connect(map, currentPoint[0] - 1, currentPoint[1], forCount, forLoop) == rest && Test(map, rest, path, new Point(currentPoint[0], currentPoint[1], _ud), road, forCount, forLoop))
+                                ConnectU(map, currentPoint[0] -1, currentPoint[1], list);
+                                count = list.Count;
+                                while (list.Any())
+                                {
+                                    tempPoint = list.Pop();
+                                    map[tempPoint[0], tempPoint[1]] = true;
+                                }
+                                if (count == rest && Test(map, rest, path, new Point(currentPoint[0], currentPoint[1], _ud), road, list))
                                 {
                                     result = true;
                                 }
@@ -408,138 +421,73 @@ namespace Roomba
             }
         }
 
-        private static int Connect(bool[,] map, int a, int b, Stack<int[]> forCount, Queue<int[]> forLoop)
-        {
-            int result;
-            forLoop.Enqueue(new int[] { a, b });
-            map[a, b] = false;
-            int[] point;
-            while (forLoop.Any())
-            {
-                point = forLoop.Dequeue();
-                if (map[point[0] - 1, point[1]])
-                {
-                    forLoop.Enqueue(new int[] { point[0] - 1, point[1] });
-                    map[point[0] - 1, point[1]] = false;
-                }
-                if (map[point[0] + 1, point[1]])
-                {
-                    forLoop.Enqueue(new int[] { point[0] + 1, point[1] });
-                    map[point[0] + 1, point[1]] = false;
-                }
-                if (map[point[0], point[1] - 1])
-                {
-                    forLoop.Enqueue(new int[] { point[0], point[1] - 1 });
-                    map[point[0], point[1] - 1] = false;
-                }
-                if (map[point[0], point[1] + 1])
-                {
-                    forLoop.Enqueue(new int[] { point[0], point[1] + 1 });
-                    map[point[0], point[1] + 1] = false;
-                }
-                forCount.Push(point);
-            }
-            result = forCount.Count;
-            while (forCount.Any())
-            {
-                point = forCount.Pop();
-                map[point[0], point[1]] = true;
-            }
-            return result;
-        }
-
-        private static void Connect(bool[,] map, int a, int b, Stack<int[]> list)
+        private static void ConnectU(bool[,] map, int a, int b, Stack<int[]> list)
         {
             map[a, b] = false;
             list.Push(new int[] { a, b });
             if (map[a - 1, b])
             {
-                Connect(map, a - 1, b, list);
-            }
-            if (map[a + 1, b])
-            {
-                Connect(map, a + 1, b, list);
+                ConnectU(map, a - 1, b, list);
             }
             if (map[a, b - 1])
             {
-                Connect(map, a, b - 1, list);
+                ConnectL(map, a, b - 1, list);
             }
             if (map[a, b + 1])
             {
-                Connect(map, a, b + 1, list);
+                ConnectR(map, a, b + 1, list);
             }
         }
-
-        public static void TestConnect()
+        private static void ConnectD(bool[,] map, int a, int b, Stack<int[]> list)
         {
-            HttpHelper hh = new HttpHelper();
-            HttpItem hi = new HttpItem()
+            map[a, b] = false;
+            list.Push(new int[] { a, b });
+            if (map[a + 1, b])
             {
-                Cookie = "laravel_session=eyJpdiI6Ijc1K3I3cFFQWWNjT2tPZTBLTytKeXc9PSIsInZhbHVlIjoibFJBMnJhd1d3b204c3dFWHNUZUFcLzIyeGhlcHNLVCtBbXlwNFIxaTRXQ09pR2srK2hEMmVvRGJlQjFyUUZxOE0ybXl2VWdxdE1vWUN4MTc5eGRBdHFBPT0iLCJtYWMiOiJmMzE5N2Y2MzFmYzg5YTE4MmFhNTcxODM4M2NjZmMyNzc3MGE0MDM4YmU3MGE3MWQwZjIxNmZhNWJlMjdkZGZlIn0%3D"
-            };
-            HttpResult hr;
-            int level = 0, x, y;
-            string mapStr;
-            hi.URL = "http://www.qlcoder.com/train/autocr";
-            hr = hh.GetHtml(hi);
-            string html = hr.Html;
-            html = html.Substring(html.IndexOf("level="));
-            html = html.Substring(0, html.IndexOf("<br>"));
-            string[] paramsArray = html.Split('&');
-            level = int.Parse(paramsArray[0].Replace("level=", string.Empty));
-            x = int.Parse(paramsArray[1].Replace("x=", string.Empty));
-            y = int.Parse(paramsArray[2].Replace("y=", string.Empty));
-            mapStr = paramsArray[3].Replace("map=", string.Empty);
-            _x = x;
-            _y = y;
-            _X = x + 2;
-            _Y = y + 2;
-            #region 初始化地图
-            _mapArray = new Stack<char>(mapStr);
-            _map = new bool[_X, _Y];
-            _rest = 0;
-            List<Point> pointList = new List<Point>();
-            for (int i = x; i > 0; i--)
-            {
-                for (int j = y; j > 0; j--)
-                {
-                    if (_mapArray.Pop() == '0')
-                    {
-                        _map[i, j] = true;
-                        _rest++;
-                        pointList.Add(new Point(i, j));
-                    }
-                }
+                ConnectD(map, a + 1, b, list);
             }
-
-            Random rand = new Random();
-            Point point = pointList[rand.Next(pointList.Count)];
-            Stack<int[]> forCount = new Stack<int[]>(), list = new Stack<int[]>();
-            Queue<int[]> forLoop = new Queue<int[]>();
-            int count;
-            int[] p=new int[2];
-            Stopwatch s = new Stopwatch();
-            s.Start();
-            for (int i = 0; i < 1000000; i++)
+            if (map[a, b - 1])
             {
-                Connect(_map, point.x, point.y, list);
-                count = list.Count;
-                while (list.Any())
-                {
-                    p = list.Pop();
-                    _map[p[0], p[1]] = true;
-                }
+                ConnectL(map, a, b - 1, list);
             }
-            s.Stop();
-            Console.WriteLine(s.Elapsed);
-            s.Restart();
-            for (int i = 0; i < 1000000; i++)
+            if (map[a, b + 1])
             {
-                count = Connect(_map, point.x, point.y, forCount, forLoop);
+                ConnectR(map, a, b + 1, list);
             }
-            s.Stop();
-            Console.WriteLine(s.Elapsed);
-            #endregion
+        }
+        private static void ConnectL(bool[,] map, int a, int b, Stack<int[]> list)
+        {
+            map[a, b] = false;
+            list.Push(new int[] { a, b });
+            if (map[a - 1, b])
+            {
+                ConnectU(map, a - 1, b, list);
+            }
+            if (map[a + 1, b])
+            {
+                ConnectD(map, a + 1, b, list);
+            }
+            if (map[a, b - 1])
+            {
+                ConnectL(map, a, b - 1, list);
+            }
+        }
+        private static void ConnectR(bool[,] map, int a, int b, Stack<int[]> list)
+        {
+            map[a, b] = false;
+            list.Push(new int[] { a, b });
+            if (map[a - 1, b])
+            {
+                ConnectU(map, a - 1, b, list);
+            }
+            if (map[a + 1, b])
+            {
+                ConnectD(map, a + 1, b, list);
+            }
+            if (map[a, b + 1])
+            {
+                ConnectR(map, a, b + 1, list);
+            }
         }
     }
 }
