@@ -17,20 +17,17 @@ namespace Roomba
         private static Stack<char> _mapArray;
         private static bool[,] _map;
         private static int _rest;
-        private static int _restInit;
         private static bool _done;
         private static Stack<char> _path;
         private static int _a;
         private static int _b;
-        private static char[] _lr = new char[] { 'l', 'r' };
-        private static char[] _ud = new char[] { 'u', 'd' };
-        private static Stack<Point> _pointStack;
+        private static Stack<int[]> _pointStack;
         private static int _threadCount;
 
         static Clean()
         {
             _path = new Stack<char>();
-            _pointStack = new Stack<Point>();
+            _pointStack = new Stack<int[]>();
             _threadCount = int.Parse(System.Configuration.ConfigurationManager.AppSettings["threadCount"]);
         }
 
@@ -47,7 +44,6 @@ namespace Roomba
                 int level = 0, x, y;
                 string mapStr;
                 int maxLevel = int.Parse(System.Configuration.ConfigurationManager.AppSettings["maxLevel"]);
-                bool multi = System.Configuration.ConfigurationManager.AppSettings["multi"] == "true";
                 while (level < maxLevel)
                 {
                     hi.URL = "http://www.qlcoder.com/train/autocr";
@@ -81,8 +77,7 @@ namespace Roomba
             #region 初始化地图
             _mapArray = new Stack<char>(mapStr);
             _map = new bool[_X, _Y];
-            _rest = 0;
-            List<Point> pointList = new List<Point>();
+            _pointStack.Clear();
             for (int i = x; i > 0; i--)
             {
                 for (int j = y; j > 0; j--)
@@ -90,38 +85,16 @@ namespace Roomba
                     if (_mapArray.Pop() == '0')
                     {
                         _map[i, j] = true;
-                        _rest++;
-                        pointList.Add(new Point(i, j));
+                        _pointStack.Push(new int[] { i, j });
                     }
                 }
             }
+            _rest = _pointStack.Count;
             #endregion
             #region 解题
             List<Task> taskList = new List<Task>();
             _done = false;
             _path.Clear();
-            _restInit = _rest - 1;
-            _pointStack.Clear();
-            foreach (Point point in pointList)
-            {
-                if (_map[point.x - 1, point.y])
-                {
-                    point.directionStack.Push('u');
-                }
-                if (_map[point.x + 1, point.y])
-                {
-                    point.directionStack.Push('d');
-                }
-                if (_map[point.x, point.y - 1])
-                {
-                    point.directionStack.Push('l');
-                }
-                if (_map[point.x, point.y + 1])
-                {
-                    point.directionStack.Push('r');
-                }
-                _pointStack.Push(point);
-            }
             for (int i = 0; i < _threadCount; i++)
             {
                 taskList.Add(Task.Factory.StartNew(DoSync));
@@ -136,10 +109,67 @@ namespace Roomba
             return result;
         }
 
+        public static string Do(int x, int y, string mapStr)
+        {
+            _x = x;
+            _y = y;
+            _X = x + 2;
+            _Y = y + 2;
+            #region 初始化地图
+            _mapArray = new Stack<char>(mapStr);
+            _map = new bool[_X, _Y];
+            _pointStack.Clear();
+            for (int i = x; i > 0; i--)
+            {
+                for (int j = y; j > 0; j--)
+                {
+                    if (_mapArray.Pop() == '0')
+                    {
+                        _map[i, j] = true;
+                        _pointStack.Push(new int[] { i, j });
+                    }
+                }
+            }
+            _rest = _pointStack.Count;
+            #endregion
+            #region 解题
+            _done = false;
+            _path.Clear();
+            int[] point;
+            Stack<int[]> road = new Stack<int[]>(), list = new Stack<int[]>();
+            while (_pointStack.Any())
+            {
+                Console.WriteLine("{0} points rest", _pointStack.Count);
+                point = _pointStack.Pop();
+                _map[point[0], point[1]] = false;
+                road.Push(point);
+                if ((_map[point[0] - 1, point[1]] && TestU(_map, _path, road, list)) || (_map[point[0] + 1, point[1]] && TestD(_map, _path, road, list)) || (_map[point[0], point[1] - 1] && TestL(_map, _path, road, list)) || (_map[point[0], point[1] + 1] && TestR(_map, _path, road, list)))
+                {
+                    _done = true;
+                    _a = point[0];
+                    _b = point[1];
+                    _path = new Stack<char>(_path);
+                    break;
+                }
+                else
+                {
+                    _map[point[0], point[1]] = true;
+                    road.Pop();
+                }
+            }
+            #endregion
+            string result = string.Format("x={0}&y={1}&path=", _a, _b);
+            foreach (char item in _path)
+            {
+                result += item;
+            }
+            return result;
+        }
+
         private static void DoSync()
         {
-            Point point;
-            bool[,] copyMap;
+            int[] point;
+            bool[,] copyMap = CopyMap(); ;
             Stack<char> copyPath = new Stack<char>();
             Stack<int[]> road = new Stack<int[]>(), list = new Stack<int[]>();
             while (!_done)
@@ -156,17 +186,22 @@ namespace Roomba
                         break;
                     }
                 }
-                copyMap = CopyMap();
-                copyMap[point.x, point.y] = false;
-                if (Test(copyMap, _restInit, copyPath, point, road, list))
+                copyMap[point[0], point[1]] = false;
+                road.Push(point);
+                if ((copyMap[point[0] - 1, point[1]] && TestU(copyMap, copyPath, road, list)) || (copyMap[point[0] + 1, point[1]] && TestD(copyMap, copyPath, road, list)) || (copyMap[point[0], point[1] - 1] && TestL(copyMap, copyPath, road, list)) || (copyMap[point[0], point[1] + 1] && TestR(copyMap, copyPath, road, list)))
                 {
                     _done = true;
-                    _a = point.x;
-                    _b = point.y;
+                    _a = point[0];
+                    _b = point[1];
                     lock (_path)
                     {
                         _path = new Stack<char>(copyPath);
                     }
+                }
+                else
+                {
+                    copyMap[point[0], point[1]] = true;
+                    road.Pop();
                 }
             }
         }
@@ -189,229 +224,502 @@ namespace Roomba
             }
         }
 
-        private static bool Test(bool[,] map, int rest, Stack<char> path, Point point, Stack<int[]> road, Stack<int[]> list)
+        private static bool TestU(bool[,] map, Stack<char> path, Stack<int[]> road, Stack<int[]> list)
         {
-            bool result = false;
-            char direction;
-            int[] currentPoint, tempPoint;
-            int pathCount = path.Count, roadCount = road.Count, count;
-            while (point.directionStack.Any())
+            int pathCount = path.Count, roadCount = road.Count;
+            int[] point;
+            if (GoU(map, path, road))
             {
-                direction = point.directionStack.Pop();
-                currentPoint = new int[] { point.x, point.y };
-                Go(map, ref rest, currentPoint, ref direction, path, road);
+                char direction = path.Peek();
+                point = road.Peek();
+                int count;
                 switch (direction)
                 {
                     case 'u':
                     case 'd':
                         {
-                            if (map[currentPoint[0], currentPoint[1] - 1])
+                            ConnectL(map, point[0], point[1] - 1, list);
+                            count = list.Count;
+                            while (list.Any())
                             {
-                                ConnectL(map, currentPoint[0], currentPoint[1] - 1, list);
-                                count = list.Count;
-                                while (list.Any())
-                                {
-                                    tempPoint = list.Pop();
-                                    map[tempPoint[0], tempPoint[1]] = true;
-                                }
-                                if (count == rest && Test(map, rest, path, new Point(currentPoint[0], currentPoint[1], _lr), road, list))
-                                {
-                                    result = true;
-                                }
+                                point = list.Pop();
+                                map[point[0], point[1]] = true;
+                            }
+                            if (count == (_rest - road.Count) && (TestL(map, path, road, list) || TestR(map, path, road, list)))
+                            {
+                                return true;
                             }
                             else
                             {
-                                if (rest == 0)
+                                while (path.Count > pathCount)
                                 {
-                                    result = true;
+                                    path.Pop();
                                 }
+                                while (road.Count > roadCount)
+                                {
+                                    point = road.Pop();
+                                    map[point[0], point[1]] = true;
+                                }
+                                return false;
                             }
-                            break;
                         }
                     case 'l':
                     case 'r':
                         {
-                            if (map[currentPoint[0] - 1, currentPoint[1]])
+                            ConnectU(map, point[0] - 1, point[1], list);
+                            count = list.Count;
+                            while (list.Any())
                             {
-                                ConnectU(map, currentPoint[0] - 1, currentPoint[1], list);
-                                count = list.Count;
-                                while (list.Any())
-                                {
-                                    tempPoint = list.Pop();
-                                    map[tempPoint[0], tempPoint[1]] = true;
-                                }
-                                if (count == rest && Test(map, rest, path, new Point(currentPoint[0], currentPoint[1], _ud), road, list))
-                                {
-                                    result = true;
-                                }
+                                point = list.Pop();
+                                map[point[0], point[1]] = true;
+                            }
+                            if (count == (_rest - road.Count) && (TestU(map, path, road, list) || TestD(map, path, road, list)))
+                            {
+                                return true;
                             }
                             else
                             {
-                                if (rest == 0)
+                                while (path.Count > pathCount)
                                 {
-                                    result = true;
+                                    path.Pop();
                                 }
+                                while (road.Count > roadCount)
+                                {
+                                    point = road.Pop();
+                                    map[point[0], point[1]] = true;
+                                }
+                                return false;
                             }
-                            break;
                         }
                 }
-                if (result)
+            }
+            else
+            {
+                if (_rest - road.Count == 0)
                 {
-                    break;
+                    return true;
                 }
                 else
                 {
-                    for (int i = road.Count; i > roadCount; i--)
-                    {
-                        tempPoint = road.Pop();
-                        map[tempPoint[0], tempPoint[1]] = true;
-                        rest++;
-                    }
-                    for (int i = path.Count; i > pathCount; i--)
+                    while (path.Count > pathCount)
                     {
                         path.Pop();
                     }
+                    while (road.Count > roadCount)
+                    {
+                        point = road.Pop();
+                        map[point[0], point[1]] = true;
+                    }
+                    return false;
                 }
             }
-            return result;
+            return false;
         }
 
-        private static void Go(bool[,] map, ref int rest, int[] point, ref char direction, Stack<char> path, Stack<int[]> road)
+        private static bool TestD(bool[,] map, Stack<char> path, Stack<int[]> road, Stack<int[]> list)
         {
-            bool go = true;
-            while (go)
+            int pathCount = path.Count, roadCount = road.Count;
+            int[] point;
+            if (GoD(map, path, road))
             {
-                path.Push(direction);
+                char direction = path.Peek();
+                point = road.Peek();
+                int count;
                 switch (direction)
                 {
                     case 'u':
-                        {
-                            while (map[point[0] - 1, point[1]])
-                            {
-                                map[--point[0], point[1]] = false;
-                                road.Push(new int[] { point[0], point[1] });
-                                rest--;
-                            }
-                            if (map[point[0], point[1] + 1])
-                            {
-                                if (!map[point[0], point[1] - 1])
-                                {
-                                    direction = 'r';
-                                }
-                                else
-                                {
-                                    go = false;
-                                }
-                            }
-                            else
-                            {
-                                if (map[point[0], point[1] - 1])
-                                {
-                                    direction = 'l';
-                                }
-                                else
-                                {
-                                    go = false;
-                                }
-                            }
-                            break;
-                        }
-                    case 'r':
-                        {
-                            while (map[point[0], point[1] + 1])
-                            {
-                                map[point[0], ++point[1]] = false;
-                                road.Push(new int[] { point[0], point[1] });
-                                rest--;
-                            }
-                            if (map[point[0] - 1, point[1]])
-                            {
-                                if (!map[point[0] + 1, point[1]])
-                                {
-                                    direction = 'u';
-                                }
-                                else
-                                {
-                                    go = false;
-                                }
-                            }
-                            else
-                            {
-                                if (map[point[0] + 1, point[1]])
-                                {
-                                    direction = 'd';
-                                }
-                                else
-                                {
-                                    go = false;
-                                }
-                            }
-                            break;
-                        }
                     case 'd':
                         {
-                            while (map[point[0] + 1, point[1]])
+                            ConnectL(map, point[0], point[1] - 1, list);
+                            count = list.Count;
+                            while (list.Any())
                             {
-                                map[++point[0], point[1]] = false;
-                                road.Push(new int[] { point[0], point[1] });
-                                rest--;
+                                point = list.Pop();
+                                map[point[0], point[1]] = true;
                             }
-                            if (map[point[0], point[1] + 1])
+                            if (count == (_rest - road.Count) && (TestL(map, path, road, list) || TestR(map, path, road, list)))
                             {
-                                if (!map[point[0], point[1] - 1])
-                                {
-                                    direction = 'r';
-                                }
-                                else
-                                {
-                                    go = false;
-                                }
+                                return true;
                             }
                             else
                             {
-                                if (map[point[0], point[1] - 1])
+                                while (path.Count > pathCount)
                                 {
-                                    direction = 'l';
+                                    path.Pop();
                                 }
-                                else
+                                while (road.Count > roadCount)
                                 {
-                                    go = false;
+                                    point = road.Pop();
+                                    map[point[0], point[1]] = true;
                                 }
+                                return false;
                             }
-                            break;
                         }
                     case 'l':
+                    case 'r':
                         {
-                            while (map[point[0], point[1] - 1])
+                            ConnectU(map, point[0] - 1, point[1], list);
+                            count = list.Count;
+                            while (list.Any())
                             {
-                                map[point[0], --point[1]] = false;
-                                road.Push(new int[] { point[0], point[1] });
-                                rest--;
+                                point = list.Pop();
+                                map[point[0], point[1]] = true;
                             }
-                            if (map[point[0] - 1, point[1]])
+                            if (count == (_rest - road.Count) && (TestU(map, path, road, list) || TestD(map, path, road, list)))
                             {
-                                if (!map[point[0] + 1, point[1]])
-                                {
-                                    direction = 'u';
-                                }
-                                else
-                                {
-                                    go = false;
-                                }
+                                return true;
                             }
                             else
                             {
-                                if (map[point[0] + 1, point[1]])
+                                while (path.Count > pathCount)
                                 {
-                                    direction = 'd';
+                                    path.Pop();
                                 }
-                                else
+                                while (road.Count > roadCount)
                                 {
-                                    go = false;
+                                    point = road.Pop();
+                                    map[point[0], point[1]] = true;
                                 }
+                                return false;
                             }
-                            break;
                         }
+                }
+            }
+            else
+            {
+                if (_rest - road.Count == 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    while (path.Count > pathCount)
+                    {
+                        path.Pop();
+                    }
+                    while (road.Count > roadCount)
+                    {
+                        point = road.Pop();
+                        map[point[0], point[1]] = true;
+                    }
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        private static bool TestL(bool[,] map, Stack<char> path, Stack<int[]> road, Stack<int[]> list)
+        {
+            int pathCount = path.Count, roadCount = road.Count;
+            int[] point;
+            if (GoL(map, path, road))
+            {
+                char direction = path.Peek();
+                point = road.Peek();
+                int count;
+                switch (direction)
+                {
+                    case 'u':
+                    case 'd':
+                        {
+                            ConnectL(map, point[0], point[1] - 1, list);
+                            count = list.Count;
+                            while (list.Any())
+                            {
+                                point = list.Pop();
+                                map[point[0], point[1]] = true;
+                            }
+                            if (count == (_rest - road.Count) && (TestL(map, path, road, list) || TestR(map, path, road, list)))
+                            {
+                                return true;
+                            }
+                            else
+                            {
+                                while (path.Count > pathCount)
+                                {
+                                    path.Pop();
+                                }
+                                while (road.Count > roadCount)
+                                {
+                                    point = road.Pop();
+                                    map[point[0], point[1]] = true;
+                                }
+                                return false;
+                            }
+                        }
+                    case 'l':
+                    case 'r':
+                        {
+                            ConnectU(map, point[0] - 1, point[1], list);
+                            count = list.Count;
+                            while (list.Any())
+                            {
+                                point = list.Pop();
+                                map[point[0], point[1]] = true;
+                            }
+                            if (count == (_rest - road.Count) && (TestU(map, path, road, list) || TestD(map, path, road, list)))
+                            {
+                                return true;
+                            }
+                            else
+                            {
+                                while (path.Count > pathCount)
+                                {
+                                    path.Pop();
+                                }
+                                while (road.Count > roadCount)
+                                {
+                                    point = road.Pop();
+                                    map[point[0], point[1]] = true;
+                                }
+                                return false;
+                            }
+                        }
+                }
+            }
+            else
+            {
+                if (_rest - road.Count == 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    while (path.Count > pathCount)
+                    {
+                        path.Pop();
+                    }
+                    while (road.Count > roadCount)
+                    {
+                        point = road.Pop();
+                        map[point[0], point[1]] = true;
+                    }
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        private static bool TestR(bool[,] map, Stack<char> path, Stack<int[]> road, Stack<int[]> list)
+        {
+            int pathCount = path.Count, roadCount = road.Count;
+            int[] point;
+            if (GoR(map, path, road))
+            {
+                char direction = path.Peek();
+                point = road.Peek();
+                int count;
+                switch (direction)
+                {
+                    case 'u':
+                    case 'd':
+                        {
+                            ConnectL(map, point[0], point[1] - 1, list);
+                            count = list.Count;
+                            while (list.Any())
+                            {
+                                point = list.Pop();
+                                map[point[0], point[1]] = true;
+                            }
+                            if (count == (_rest - road.Count) && (TestL(map, path, road, list) || TestR(map, path, road, list)))
+                            {
+                                return true;
+                            }
+                            else
+                            {
+                                while (path.Count > pathCount)
+                                {
+                                    path.Pop();
+                                }
+                                while (road.Count > roadCount)
+                                {
+                                    point = road.Pop();
+                                    map[point[0], point[1]] = true;
+                                }
+                                return false;
+                            }
+                        }
+                    case 'l':
+                    case 'r':
+                        {
+                            ConnectU(map, point[0] - 1, point[1], list);
+                            count = list.Count;
+                            while (list.Any())
+                            {
+                                point = list.Pop();
+                                map[point[0], point[1]] = true;
+                            }
+                            if (count == (_rest - road.Count) && (TestU(map, path, road, list) || TestD(map, path, road, list)))
+                            {
+                                return true;
+                            }
+                            else
+                            {
+                                while (path.Count > pathCount)
+                                {
+                                    path.Pop();
+                                }
+                                while (road.Count > roadCount)
+                                {
+                                    point = road.Pop();
+                                    map[point[0], point[1]] = true;
+                                }
+                                return false;
+                            }
+                        }
+                }
+            }
+            else
+            {
+                if (_rest - road.Count == 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    while (path.Count > pathCount)
+                    {
+                        path.Pop();
+                    }
+                    while (road.Count > roadCount)
+                    {
+                        point = road.Pop();
+                        map[point[0], point[1]] = true;
+                    }
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        private static bool GoU(bool[,] map, Stack<char> path, Stack<int[]> road)
+        {
+            path.Push('u');
+            int a = road.Peek()[0], b = road.Peek()[1];
+            while (map[a - 1, b])
+            {
+                map[--a, b] = false;
+                road.Push(new int[] { a, b });
+            }
+            if (map[a, b - 1])
+            {
+                if (map[a, b + 1])
+                {
+                    return true;
+                }
+                else
+                {
+                    return GoL(map, path, road);
+                }
+            }
+            else
+            {
+                if (map[a, b + 1])
+                {
+                    return GoR(map, path, road);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        private static bool GoD(bool[,] map, Stack<char> path, Stack<int[]> road)
+        {
+            path.Push('d');
+            int a = road.Peek()[0], b = road.Peek()[1];
+            while (map[a + 1, b])
+            {
+                map[++a, b] = false;
+                road.Push(new int[] { a, b });
+            }
+            if (map[a, b - 1])
+            {
+                if (map[a, b + 1])
+                {
+                    return true;
+                }
+                else
+                {
+                    return GoL(map, path, road);
+                }
+            }
+            else
+            {
+                if (map[a, b + 1])
+                {
+                    return GoR(map, path, road);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        private static bool GoL(bool[,] map, Stack<char> path, Stack<int[]> road)
+        {
+            path.Push('l');
+            int a = road.Peek()[0], b = road.Peek()[1];
+            while (map[a, b - 1])
+            {
+                map[a, --b] = false;
+                road.Push(new int[] { a, b });
+            }
+            if (map[a - 1, b])
+            {
+                if (map[a + 1, b])
+                {
+                    return true;
+                }
+                else
+                {
+                    return GoU(map, path, road);
+                }
+            }
+            else
+            {
+                if (map[a + 1, b])
+                {
+                    return GoD(map, path, road);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        private static bool GoR(bool[,] map, Stack<char> path, Stack<int[]> road)
+        {
+            path.Push('r');
+            int a = road.Peek()[0], b = road.Peek()[1];
+            while (map[a, b + 1])
+            {
+                map[a, ++b] = false;
+                road.Push(new int[] { a, b });
+            }
+            if (map[a - 1, b])
+            {
+                if (map[a + 1, b])
+                {
+                    return true;
+                }
+                else
+                {
+                    return GoU(map, path, road);
+                }
+            }
+            else
+            {
+                if (map[a + 1, b])
+                {
+                    return GoD(map, path, road);
+                }
+                else
+                {
+                    return false;
                 }
             }
         }
