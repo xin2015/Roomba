@@ -47,7 +47,6 @@
   <ItemGroup>
     <Compile Include="Clean.cs" />
     <Compile Include="HttpHelper.cs" />
-    <Compile Include="Point.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
