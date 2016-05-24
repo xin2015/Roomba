@@ -95,6 +95,7 @@ namespace Roomba
                     }
                 }
             }
+            Console.WriteLine("{0} points rest.", _rest);
             #endregion
             #region 解题
             List<Task> taskList = new List<Task>();
