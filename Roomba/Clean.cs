@@ -102,13 +102,8 @@ namespace Roomba
             _path.Clear();
             _restInit = _rest - 1;
             _pointStack.Clear();
-            Point point;
-            Random rand = new Random();
-            int index;
-            while (pointList.Any())
+            foreach (Point point in pointList)
             {
-                index = rand.Next(pointList.Count);
-                point = pointList[index];
                 if (_map[point.x - 1, point.y])
                 {
                     point.directionStack.Push('u');
@@ -126,7 +121,6 @@ namespace Roomba
                     point.directionStack.Push('r');
                 }
                 _pointStack.Push(point);
-                pointList.RemoveAt(index);
             }
             for (int i = 0; i < _threadCount; i++)
             {
@@ -239,7 +233,7 @@ namespace Roomba
                         {
                             if (map[currentPoint[0] - 1, currentPoint[1]])
                             {
-                                ConnectU(map, currentPoint[0] -1, currentPoint[1], list);
+                                ConnectU(map, currentPoint[0] - 1, currentPoint[1], list);
                                 count = list.Count;
                                 while (list.Any())
                                 {
