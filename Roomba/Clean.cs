@@ -95,7 +95,6 @@ namespace Roomba
                     }
                 }
             }
-            Console.WriteLine("{0} points rest.", _rest);
             #endregion
             #region 解题
             List<Task> taskList = new List<Task>();
@@ -153,6 +152,7 @@ namespace Roomba
             {
                 lock (_pointStack)
                 {
+                    Console.WriteLine("{0} points rest", _pointStack.Count);
                     if (_pointStack.Any())
                     {
                         point = _pointStack.Pop();
