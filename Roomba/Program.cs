@@ -13,7 +13,7 @@ namespace Roomba
         {
             try
             {
-                Clean.Auto();
+                Clean.TestConnect();
             }
             catch (Exception e)
             {

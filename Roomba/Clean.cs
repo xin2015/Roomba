@@ -1,6 +1,7 @@
 ﻿using DotNet4.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -445,6 +446,100 @@ namespace Roomba
                 map[point[0], point[1]] = true;
             }
             return result;
+        }
+
+        private static void Connect(bool[,] map, int a, int b, Stack<int[]> list)
+        {
+            map[a, b] = false;
+            list.Push(new int[] { a, b });
+            if (map[a - 1, b])
+            {
+                Connect(map, a - 1, b, list);
+            }
+            if (map[a + 1, b])
+            {
+                Connect(map, a + 1, b, list);
+            }
+            if (map[a, b - 1])
+            {
+                Connect(map, a, b - 1, list);
+            }
+            if (map[a, b + 1])
+            {
+                Connect(map, a, b + 1, list);
+            }
+        }
+
+        public static void TestConnect()
+        {
+            HttpHelper hh = new HttpHelper();
+            HttpItem hi = new HttpItem()
+            {
+                Cookie = "laravel_session=eyJpdiI6Ijc1K3I3cFFQWWNjT2tPZTBLTytKeXc9PSIsInZhbHVlIjoibFJBMnJhd1d3b204c3dFWHNUZUFcLzIyeGhlcHNLVCtBbXlwNFIxaTRXQ09pR2srK2hEMmVvRGJlQjFyUUZxOE0ybXl2VWdxdE1vWUN4MTc5eGRBdHFBPT0iLCJtYWMiOiJmMzE5N2Y2MzFmYzg5YTE4MmFhNTcxODM4M2NjZmMyNzc3MGE0MDM4YmU3MGE3MWQwZjIxNmZhNWJlMjdkZGZlIn0%3D"
+            };
+            HttpResult hr;
+            int level = 0, x, y;
+            string mapStr;
+            hi.URL = "http://www.qlcoder.com/train/autocr";
+            hr = hh.GetHtml(hi);
+            string html = hr.Html;
+            html = html.Substring(html.IndexOf("level="));
+            html = html.Substring(0, html.IndexOf("<br>"));
+            string[] paramsArray = html.Split('&');
+            level = int.Parse(paramsArray[0].Replace("level=", string.Empty));
+            x = int.Parse(paramsArray[1].Replace("x=", string.Empty));
+            y = int.Parse(paramsArray[2].Replace("y=", string.Empty));
+            mapStr = paramsArray[3].Replace("map=", string.Empty);
+            _x = x;
+            _y = y;
+            _X = x + 2;
+            _Y = y + 2;
+            #region 初始化地图
+            _mapArray = new Stack<char>(mapStr);
+            _map = new bool[_X, _Y];
+            _rest = 0;
+            List<Point> pointList = new List<Point>();
+            for (int i = x; i > 0; i--)
+            {
+                for (int j = y; j > 0; j--)
+                {
+                    if (_mapArray.Pop() == '0')
+                    {
+                        _map[i, j] = true;
+                        _rest++;
+                        pointList.Add(new Point(i, j));
+                    }
+                }
+            }
+
+            Random rand = new Random();
+            Point point = pointList[rand.Next(pointList.Count)];
+            Stack<int[]> forCount = new Stack<int[]>(), list = new Stack<int[]>();
+            Queue<int[]> forLoop = new Queue<int[]>();
+            int count;
+            int[] p=new int[2];
+            Stopwatch s = new Stopwatch();
+            s.Start();
+            for (int i = 0; i < 1000000; i++)
+            {
+                Connect(_map, point.x, point.y, list);
+                count = list.Count;
+                while (list.Any())
+                {
+                    p = list.Pop();
+                    _map[p[0], p[1]] = true;
+                }
+            }
+            s.Stop();
+            Console.WriteLine(s.Elapsed);
+            s.Restart();
+            for (int i = 0; i < 1000000; i++)
+            {
+                count = Connect(_map, point.x, point.y, forCount, forLoop);
+            }
+            s.Stop();
+            Console.WriteLine(s.Elapsed);
+            #endregion
         }
     }
 }
