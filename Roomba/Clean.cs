@@ -173,7 +173,7 @@ namespace Roomba
             Stack<int[]> road = new Stack<int[]>(), list = new Stack<int[]>();
             while (_pointStack.Any())
             {
-                Console.WriteLine("{0} points rest", _pointStack.Count);
+                Console.WriteLine("{0}：{1} points rest", DateTime.Now.ToString("HH:mm:ss"), _pointStack.Count);
                 point = _pointStack.Pop();
                 _map[point[0], point[1]] = false;
                 road.Push(point);
@@ -210,7 +210,7 @@ namespace Roomba
             {
                 lock (_pointStack)
                 {
-                    Console.WriteLine("{0} points rest", _pointStack.Count);
+                    Console.WriteLine("{0}：{1} points rest", DateTime.Now.ToString("HH:mm:ss"), _pointStack.Count);
                     if (_pointStack.Any())
                     {
                         point = _pointStack.Pop();
