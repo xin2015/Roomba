@@ -40,10 +40,10 @@ namespace Roomba
                 HttpHelper hh = new HttpHelper();
                 HttpItem hi = new HttpItem()
                 {
-                    Cookie = "laravel_session=eyJpdiI6Ijc1K3I3cFFQWWNjT2tPZTBLTytKeXc9PSIsInZhbHVlIjoibFJBMnJhd1d3b204c3dFWHNUZUFcLzIyeGhlcHNLVCtBbXlwNFIxaTRXQ09pR2srK2hEMmVvRGJlQjFyUUZxOE0ybXl2VWdxdE1vWUN4MTc5eGRBdHFBPT0iLCJtYWMiOiJmMzE5N2Y2MzFmYzg5YTE4MmFhNTcxODM4M2NjZmMyNzc3MGE0MDM4YmU3MGE3MWQwZjIxNmZhNWJlMjdkZGZlIn0%3D"
+                    Cookie = "laravel_session=eyJpdiI6IlwvRG5neDVtN1lOSGh2WU82dldoNXZ3PT0iLCJ2YWx1ZSI6ImFLV2tSKzJ4Vlc2RWlCWHltOWU1bHpOQUdZalwvWDNTcSt3UGhlT0lQVWdMMGNLcFROekE0T256UHBZekZRS3QwVFd1MEVic2swaTJ0ZEgwMFpGZUxKQT09IiwibWFjIjoiOGQ3MDkwNmVhYmQ0ZTU0NDQ3ODAxNDQ0YzVkYzg4ZTBiMWE5NGIxNzliYjkyMGUzMmE3NGE3YjQ0NWRiNjJjYyJ9"
                 };
                 HttpResult hr;
-                int level = 0, x, y;
+                int level = 80, x, y;
                 string mapStr;
                 int maxLevel = int.Parse(System.Configuration.ConfigurationManager.AppSettings["maxLevel"]);
                 bool multi = System.Configuration.ConfigurationManager.AppSettings["multi"] == "true";
@@ -71,7 +71,7 @@ namespace Roomba
                 {
                     while (level < maxLevel)
                     {
-                        hi.URL = "http://www.qlcoder.com/train/autocr";
+                        hi.URL = "http://www.qlcoder.com/train/autocr?level=" + level.ToString();
                         hr = hh.GetHtml(hi);
                         string html = hr.Html;
                         html = html.Substring(html.IndexOf("level="));
@@ -141,6 +141,8 @@ namespace Roomba
 
         public static string Do(int x, int y, string mapStr)
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             _x = x;
             _y = y;
             _X = x + 2;
@@ -197,6 +199,8 @@ namespace Roomba
             {
                 result += item;
             }
+            sw.Stop();
+            Console.WriteLine(sw.Elapsed);
             return result;
         }
 
