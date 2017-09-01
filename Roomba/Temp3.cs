@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Roomba
 {
-    class Temp2
+    class Temp3
     {
         private static int _x;
         private static int _y;
@@ -32,13 +32,12 @@ namespace Roomba
                     Cookie = "laravel_session=eyJpdiI6IlwvRG5neDVtN1lOSGh2WU82dldoNXZ3PT0iLCJ2YWx1ZSI6ImFLV2tSKzJ4Vlc2RWlCWHltOWU1bHpOQUdZalwvWDNTcSt3UGhlT0lQVWdMMGNLcFROekE0T256UHBZekZRS3QwVFd1MEVic2swaTJ0ZEgwMFpGZUxKQT09IiwibWFjIjoiOGQ3MDkwNmVhYmQ0ZTU0NDQ3ODAxNDQ0YzVkYzg4ZTBiMWE5NGIxNzliYjkyMGUzMmE3NGE3YjQ0NWRiNjJjYyJ9"
                 };
                 HttpResult hr;
-                int level = 101, x, y;
+                int level = 90, x, y;
                 string mapStr;
                 int maxLevel = int.Parse(System.Configuration.ConfigurationManager.AppSettings["maxLevel"]);
                 while (level < maxLevel)
                 {
-                    hi.URL = "http://www.qlcoder.com/train/autocr";
-                    //hi.URL = "http://www.qlcoder.com/train/autocr?level=" + level.ToString();
+                    hi.URL = "http://www.qlcoder.com/train/autocr?level=" + level.ToString();
                     hr = hh.GetHtml(hi);
                     string html = hr.Html;
                     html = html.Substring(html.IndexOf("level="));
@@ -374,6 +373,66 @@ namespace Roomba
             else
             {
                 return false;
+            }
+        }
+
+        private static void HorizontalConnect(bool[][] map, Stack<int[]> horizontalConnect, Stack<int[]> verticalConnect, Stack<int[]> connect)
+        {
+            while (horizontalConnect.Count > 0)
+            {
+                int[] point = horizontalConnect.Pop();
+                int a = point[0], b = point[1] + 1;
+                while (map[a][b])
+                {
+                    map[a][b] = false;
+                    int[] pointi = new int[] { a, b };
+                    connect.Push(pointi);
+                    verticalConnect.Push(pointi);
+                    b++;
+                }
+                b = point[1] - 1;
+                while (map[a][b])
+                {
+                    map[a][b] = false;
+                    int[] pointi = new int[] { a, b };
+                    connect.Push(pointi);
+                    verticalConnect.Push(pointi);
+                    b--;
+                }
+            }
+            if (verticalConnect.Count > 0)
+            {
+                VerticalConnect(map, horizontalConnect, verticalConnect, connect);
+            }
+        }
+
+        private static void VerticalConnect(bool[][] map, Stack<int[]> horizontalConnect, Stack<int[]> verticalConnect, Stack<int[]> connect)
+        {
+            while (verticalConnect.Count > 0)
+            {
+                int[] point = verticalConnect.Pop();
+                int a = point[0] + 1, b = point[1];
+                while (map[a][b])
+                {
+                    map[a][b] = false;
+                    int[] pointi = new int[] { a, b };
+                    connect.Push(pointi);
+                    horizontalConnect.Push(pointi);
+                    a++;
+                }
+                a = point[0] - 1;
+                while (map[a][b])
+                {
+                    map[a][b] = false;
+                    int[] pointi = new int[] { a, b };
+                    connect.Push(pointi);
+                    horizontalConnect.Push(pointi);
+                    a--;
+                }
+            }
+            if (horizontalConnect.Count > 0)
+            {
+                HorizontalConnect(map, horizontalConnect, verticalConnect, connect);
             }
         }
     }
