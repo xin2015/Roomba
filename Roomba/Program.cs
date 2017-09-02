@@ -1,5 +1,4 @@
-﻿using DotNet4.Utilities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,7 +12,8 @@ namespace Roomba
         {
             try
             {
-                Temp2.Auto();
+                Roomba roomba = new Roomba();
+                roomba.Auto();
             }
             catch (Exception e)
             {
