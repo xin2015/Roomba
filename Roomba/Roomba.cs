@@ -22,6 +22,7 @@ namespace Roomba
         int restCount;
         Stack<int> roadx;
         Stack<int> roady;
+        int startIndex;
 
         public Roomba()
         {
@@ -29,6 +30,10 @@ namespace Roomba
             initRestPoints = new Stack<int>();
             roadx = new Stack<int>();
             roady = new Stack<int>();
+            if (!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["startIndex"], out startIndex))
+            {
+                startIndex = 0;
+            }
         }
 
         public void Auto()
@@ -43,8 +48,7 @@ namespace Roomba
                 HttpResult hr;
                 while (true)
                 {
-                    //hi.URL = "http://www.qlcoder.com/train/autocr";
-                    hi.URL = "http://www.qlcoder.com/train/autocr?level=" + level.ToString();
+                    hi.URL = "http://www.qlcoder.com/train/autocr";
                     hr = hh.GetHtml(hi);
                     string html = hr.Html;
                     html = html.Substring(html.IndexOf("level="));
@@ -58,7 +62,6 @@ namespace Roomba
                     hi.URL = string.Format("http://www.qlcoder.com/train/crcheck?{0}", Clean());
                     Console.WriteLine("level:{0} end, {1}", level, DateTime.Now.ToString());
                     hr = hh.GetHtml(hi);
-                    level++;
                 }
             }
             catch (Exception e)
@@ -95,14 +98,18 @@ namespace Roomba
             roadx.Clear();
             roady.Clear();
             int a = 0, b = 0;
+            if (startIndex == 0)
+            {
+                startIndex = restCount;
+            }
             while (initRestPoints.Count > 0)
             {
                 a = initRestPoints.Pop();
                 b = initRestPoints.Pop();
-                //if (initRestPoints.Count / 2 > 872)
-                //{
-                //    continue;
-                //}
+                if (initRestPoints.Count / 2 > startIndex)
+                {
+                    continue;
+                }
                 if (Clean(a, b))
                 {
                     break;
@@ -150,6 +157,7 @@ namespace Roomba
             string result = string.Format("x={0}&y={1}&path={2}", a, b, sb);
             sw.Stop();
             Console.WriteLine(sw.Elapsed);
+            startIndex = 0;
             return result;
         }
 
