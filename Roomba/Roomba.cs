@@ -10,30 +10,25 @@ namespace Roomba
 {
     public class Roomba
     {
-        private int level;
-        private int x;
-        private int y;
-        private string mapStr;
-        private int X;
-        private int Y;
-        private Stack<char> mapArray;
-        private bool[][] map;
-        private Stack<int> initRestPoints;
-        private int restCount;
-        private bool done;
-        private int a;
-        private int b;
-        private Stack<char> path;
-        private int threadCount;
-        private object locker;
+        int level;
+        int x;
+        int y;
+        string mapStr;
+        int X;
+        int Y;
+        Stack<char> mapArray;
+        bool[][] map;
+        Stack<int> initRestPoints;
+        int restCount;
+        Stack<int> roadx;
+        Stack<int> roady;
 
         public Roomba()
         {
+            level = 101;
             initRestPoints = new Stack<int>();
-            level = 89;
-            path = new Stack<char>();
-            threadCount = 4;
-            locker = new object();
+            roadx = new Stack<int>();
+            roady = new Stack<int>();
         }
 
         public void Auto()
@@ -61,9 +56,9 @@ namespace Roomba
                     mapStr = paramsArray[3].Replace("map=", string.Empty);
                     Console.WriteLine("level:{0},x:{1},y{2} start, {3}", level, x, y, DateTime.Now.ToString());
                     hi.URL = string.Format("http://www.qlcoder.com/train/crcheck?{0}", Clean());
-                    //hi.URL = string.Format("http://www.qlcoder.com/train/crcheck?{0}", CleanMultithreaded());
                     Console.WriteLine("level:{0} end, {1}", level, DateTime.Now.ToString());
                     hr = hh.GetHtml(hi);
+                    level++;
                 }
             }
             catch (Exception e)
@@ -71,8 +66,8 @@ namespace Roomba
                 Console.WriteLine(e.Message);
             }
         }
-        #region single
-        private string Clean()
+
+        string Clean()
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -96,878 +91,350 @@ namespace Roomba
             }
             map[0] = new bool[Y];
             map[X - 1] = new bool[Y];
-            restCount = initRestPoints.Count - 2;
-            Stack<char> path = new Stack<char>();
-            Stack<int> road = new Stack<int>();
+            restCount = initRestPoints.Count / 2;
+            roadx.Clear();
+            roady.Clear();
             int a = 0, b = 0;
             while (initRestPoints.Count > 0)
             {
                 a = initRestPoints.Pop();
                 b = initRestPoints.Pop();
-                Console.WriteLine("point x:{0},y:{1} start, {2} points rest, {3}", a, b, initRestPoints.Count / 2, DateTime.Now.ToString());
-                map[a][b] = false;
-                if ((map[a][b + 1] && RClean(a, b, path, road)) || (map[a + 1][b] && DClean(a, b, path, road)) || (map[a][b - 1] && LClean(a, b, path, road)) || (map[a - 1][b] && UClean(a, b, path, road)))
+                //if (initRestPoints.Count / 2 > 872)
+                //{
+                //    continue;
+                //}
+                if (Clean(a, b))
                 {
                     break;
                 }
-                else
-                {
-                    map[a][b] = true;
-                }
             }
             StringBuilder sb = new StringBuilder();
-            while (path.Count > 0)
-            {
-                sb.Append(path.Pop());
-            }
-            string result = string.Format("x={0}&y={1}&path={2}", a, b, sb);
-            sw.Stop();
-            Console.WriteLine(sw.Elapsed);
-            return result;
-        }
-
-        private bool RClean(int a, int b, Stack<char> path, Stack<int> road)
-        {
-            bool result;
-            int roadCount = road.Count;
-            b++;
-            do
-            {
-                map[a][b] = false;
-                road.Push(b);
-                road.Push(a);
-                b++;
-            } while (map[a][b]);
-            b--;
-            if (map[a + 1][b])
-            {
-                if (map[a - 1][b])
-                {
-                    if (HorizontalPrune(a, b, road.Count))
-                    {
-                        result = false;
-                    }
-                    else
-                    {
-                        result = DClean(a, b, path, road) || UClean(a, b, path, road);
-                    }
-                }
-                else
-                {
-                    result = DClean(a, b, path, road);
-                }
-            }
-            else
-            {
-                if (map[a - 1][b])
-                {
-                    result = UClean(a, b, path, road);
-                }
-                else
-                {
-                    result = road.Count == restCount;
-                }
-            }
-            if (result)
-            {
-                path.Push('r');
-            }
-            else
-            {
-                while (road.Count > roadCount)
-                {
-                    map[road.Pop()][road.Pop()] = true;
-                }
-            }
-            return result;
-        }
-
-        private bool LClean(int a, int b, Stack<char> path, Stack<int> road)
-        {
-            bool result;
-            int roadCount = road.Count;
-            b--;
-            do
-            {
-                map[a][b] = false;
-                road.Push(b);
-                road.Push(a);
-                b--;
-            } while (map[a][b]);
-            b++;
-            if (map[a + 1][b])
-            {
-                if (map[a - 1][b])
-                {
-                    if (HorizontalPrune(a, b, road.Count))
-                    {
-                        result = false;
-                    }
-                    else
-                    {
-                        result = DClean(a, b, path, road) || UClean(a, b, path, road);
-                    }
-                }
-                else
-                {
-                    result = DClean(a, b, path, road);
-                }
-            }
-            else
-            {
-                if (map[a - 1][b])
-                {
-                    result = UClean(a, b, path, road);
-                }
-                else
-                {
-                    result = road.Count == restCount;
-                }
-            }
-            if (result)
-            {
-                path.Push('l');
-            }
-            else
-            {
-                while (road.Count > roadCount)
-                {
-                    map[road.Pop()][road.Pop()] = true;
-                }
-            }
-            return result;
-        }
-
-        private bool DClean(int a, int b, Stack<char> path, Stack<int> road)
-        {
-            bool result;
-            int roadCount = road.Count;
-            a++;
-            do
-            {
-                map[a][b] = false;
-                road.Push(b);
-                road.Push(a);
-                a++;
-            } while (map[a][b]);
-            a--;
-            if (map[a][b + 1])
-            {
-                if (map[a][b - 1])
-                {
-                    if (VerticalPrune(a, b, road.Count))
-                    {
-                        result = false;
-                    }
-                    else
-                    {
-                        result = RClean(a, b, path, road) || LClean(a, b, path, road);
-                    }
-                }
-                else
-                {
-                    result = RClean(a, b, path, road);
-                }
-            }
-            else
-            {
-                if (map[a][b - 1])
-                {
-                    result = LClean(a, b, path, road);
-                }
-                else
-                {
-                    result = road.Count == restCount;
-                }
-            }
-            if (result)
-            {
-                path.Push('d');
-            }
-            else
-            {
-                while (road.Count > roadCount)
-                {
-                    map[road.Pop()][road.Pop()] = true;
-                }
-            }
-            return result;
-        }
-
-        private bool UClean(int a, int b, Stack<char> path, Stack<int> road)
-        {
-            bool result;
-            int roadCount = road.Count;
-            a--;
-            do
-            {
-                map[a][b] = false;
-                road.Push(b);
-                road.Push(a);
-                a--;
-            } while (map[a][b]);
-            a++;
-            if (map[a][b + 1])
-            {
-                if (map[a][b - 1])
-                {
-                    if (VerticalPrune(a, b, road.Count))
-                    {
-                        result = false;
-                    }
-                    else
-                    {
-                        result = RClean(a, b, path, road) || LClean(a, b, path, road);
-                    }
-                }
-                else
-                {
-                    result = RClean(a, b, path, road);
-                }
-            }
-            else
-            {
-                if (map[a][b - 1])
-                {
-                    result = LClean(a, b, path, road);
-                }
-                else
-                {
-                    result = road.Count == restCount;
-                }
-            }
-            if (result)
-            {
-                path.Push('u');
-            }
-            else
-            {
-                while (road.Count > roadCount)
-                {
-                    map[road.Pop()][road.Pop()] = true;
-                }
-            }
-            return result;
-        }
-
-        private bool HorizontalPrune(int a, int b, int roadCount)
-        {
-            Stack<int> horizontalConnect = new Stack<int>(), verticalConnect = new Stack<int>(), connect = new Stack<int>();
-            a++;
-            int c;
-            do
-            {
-                map[a][b] = false;
-                horizontalConnect.Push(b);
-                horizontalConnect.Push(a);
-                connect.Push(b);
-                connect.Push(a);
-                a++;
-            } while (map[a][b]);
-            do
-            {
-                while (horizontalConnect.Count > 0)
-                {
-                    a = horizontalConnect.Pop();
-                    c = horizontalConnect.Pop();
-                    b = c + 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        verticalConnect.Push(b);
-                        verticalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        b++;
-                    }
-                    b = c - 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        verticalConnect.Push(b);
-                        verticalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        b--;
-                    }
-                }
-                while (verticalConnect.Count > 0)
-                {
-                    c = verticalConnect.Pop();
-                    b = verticalConnect.Pop();
-                    a = c + 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        horizontalConnect.Push(b);
-                        horizontalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        a++;
-                    }
-                    a = c - 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        horizontalConnect.Push(b);
-                        horizontalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        a--;
-                    }
-                }
-            } while (horizontalConnect.Count > 0);
-            int count = connect.Count;
-            while (connect.Count > 0)
-            {
-                map[connect.Pop()][connect.Pop()] = true;
-            }
-            return count + roadCount < restCount;
-        }
-
-        private bool VerticalPrune(int a, int b, int roadCount)
-        {
-            Stack<int> horizontalConnect = new Stack<int>(), verticalConnect = new Stack<int>(), connect = new Stack<int>();
-            b++;
-            int c;
-            do
-            {
-                map[a][b] = false;
-                verticalConnect.Push(b);
-                verticalConnect.Push(a);
-                connect.Push(b);
-                connect.Push(a);
-                b++;
-            } while (map[a][b]);
-            do
-            {
-                while (verticalConnect.Count > 0)
-                {
-                    c = verticalConnect.Pop();
-                    b = verticalConnect.Pop();
-                    a = c + 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        horizontalConnect.Push(b);
-                        horizontalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        a++;
-                    }
-                    a = c - 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        horizontalConnect.Push(b);
-                        horizontalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        a--;
-                    }
-                }
-                while (horizontalConnect.Count > 0)
-                {
-                    a = horizontalConnect.Pop();
-                    c = horizontalConnect.Pop();
-                    b = c + 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        verticalConnect.Push(b);
-                        verticalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        b++;
-                    }
-                    b = c - 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        verticalConnect.Push(b);
-                        verticalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        b--;
-                    }
-                }
-            } while (verticalConnect.Count > 0);
-            int count = connect.Count;
-            while (connect.Count > 0)
-            {
-                map[connect.Pop()][connect.Pop()] = true;
-            }
-            return count + roadCount < restCount;
-        }
-        #endregion
-        #region multiple
-        private string CleanMultithreaded()
-        {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            X = x + 2;
-            Y = y + 2;
-            mapArray = new Stack<char>(mapStr);
-            map = new bool[X][];
-            initRestPoints.Clear();
-            for (int i = x; i > 0; i--)
-            {
-                map[i] = new bool[Y];
-                for (int j = y; j > 0; j--)
-                {
-                    if (mapArray.Pop() == '0')
-                    {
-                        map[i][j] = true;
-                        initRestPoints.Push(j);
-                        initRestPoints.Push(i);
-                    }
-                }
-            }
-            map[0] = new bool[Y];
-            map[X - 1] = new bool[Y];
-            restCount = initRestPoints.Count - 2;
-            List<Task> taskList = new List<Task>();
-            done = false;
-            path.Clear();
-            for (int i = 0; i < threadCount; i++)
-            {
-                Task task = new Task(CleanUnit);
-                task.Start();
-                taskList.Add(task);
-            }
-            Task.WaitAll(taskList.ToArray());
-            StringBuilder sb = new StringBuilder();
-            while (path.Count > 0)
-            {
-                sb.Append(path.Pop());
-            }
-            string result = string.Format("x={0}&y={1}&path={2}", a, b, sb);
-            sw.Stop();
-            Console.WriteLine(sw.Elapsed);
-            return result;
-        }
-
-        private void CleanUnit()
-        {
-            int a = 0, b = 0;
-            bool[][] map = new bool[X][];
-            for (int i = 0; i < X; i++)
-            {
-                map[i] = new bool[Y];
-                for (int j = 0; j < Y; j++)
-                {
-                    map[i][j] = this.map[i][j];
-                }
-            }
             Stack<char> path = new Stack<char>();
-            Stack<int> road = new Stack<int>();
-            while (!done)
+            char direction;
+            X = roadx.Pop();
+            Y = roady.Pop();
+            x = roadx.Peek();
+            y = roady.Peek();
+            if (X == x)
             {
-                lock (locker)
+                direction = Y > y ? 'r' : 'l';
+            }
+            else
+            {
+                direction = X > x ? 'd' : 'u';
+            }
+            path.Push(direction);
+            while (roadx.Count > 1)
+            {
+                X = roadx.Pop();
+                Y = roady.Pop();
+                x = roadx.Peek();
+                y = roady.Peek();
+                if (X == x)
                 {
-                    if (initRestPoints.Count > 0)
-                    {
-                        a = initRestPoints.Pop();
-                        b = initRestPoints.Pop();
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                Console.WriteLine("point x:{0},y:{1} start, {2} points rest, {3}", a, b, initRestPoints.Count / 2, DateTime.Now.ToString());
-                map[a][b] = false;
-                if ((map[a][b + 1] && RClean(map, a, b, path, road)) || (map[a + 1][b] && DClean(map, a, b, path, road)) || (map[a][b - 1] && LClean(map, a, b, path, road)) || (map[a - 1][b] && UClean(map, a, b, path, road)))
-                {
-                    lock (locker)
-                    {
-                        this.a = a;
-                        this.b = b;
-                        this.path = path;
-                        done = true;
-                    }
-                    break;
+                    direction = Y > y ? 'r' : 'l';
                 }
                 else
                 {
-                    map[a][b] = true;
+                    direction = X > x ? 'd' : 'u';
+                }
+                if (direction != path.Peek())
+                {
+                    path.Push(direction);
                 }
             }
+            while (path.Count > 0)
+            {
+                sb.Append(path.Pop());
+            }
+            string result = string.Format("x={0}&y={1}&path={2}", a, b, sb);
+            sw.Stop();
+            Console.WriteLine(sw.Elapsed);
+            return result;
         }
 
-        private bool RClean(bool[][] map, int a, int b, Stack<char> path, Stack<int> road)
+        bool Clean(int a, int b)
         {
-            bool result;
-            int roadCount = road.Count;
-            b++;
-            do
+            Console.WriteLine("point x:{0},y:{1} start, {2} points rest, {3}", a, b, initRestPoints.Count / 2, DateTime.Now.ToString());
+            Stack<int> work = new Stack<int>();
+            Stack<int> restore = new Stack<int>();
+            Stack<int> horizontalConnect = new Stack<int>(), verticalConnect = new Stack<int>(), connect = new Stack<int>();
+            int roadCount, movex, movey;
+            bool oneway;
+            map[a][b] = false;
+            roadx.Push(a);
+            roady.Push(b);
+            if (map[a - 1][b])
             {
-                map[a][b] = false;
-                road.Push(b);
-                road.Push(a);
-                b++;
-            } while (map[a][b]);
-            b--;
+                work.Push(0);
+                work.Push(-1);
+            }
+            if (map[a][b - 1])
+            {
+                work.Push(-1);
+                work.Push(0);
+            }
             if (map[a + 1][b])
             {
-                if (map[a - 1][b])
-                {
-                    if (HorizontalPrune(map, a, b, road.Count))
-                    {
-                        result = false;
-                    }
-                    else
-                    {
-                        result = DClean(map, a, b, path, road) || UClean(map, a, b, path, road);
-                    }
-                }
-                else
-                {
-                    result = DClean(map, a, b, path, road);
-                }
+                work.Push(0);
+                work.Push(1);
             }
-            else
-            {
-                if (map[a - 1][b])
-                {
-                    result = UClean(map, a, b, path, road);
-                }
-                else
-                {
-                    result = road.Count == restCount;
-                }
-            }
-            if (result)
-            {
-                path.Push('r');
-            }
-            else
-            {
-                while (road.Count > roadCount)
-                {
-                    map[road.Pop()][road.Pop()] = true;
-                }
-            }
-            return result;
-        }
-
-        private bool LClean(bool[][] map, int a, int b, Stack<char> path, Stack<int> road)
-        {
-            bool result;
-            int roadCount = road.Count;
-            b--;
-            do
-            {
-                map[a][b] = false;
-                road.Push(b);
-                road.Push(a);
-                b--;
-            } while (map[a][b]);
-            b++;
-            if (map[a + 1][b])
-            {
-                if (map[a - 1][b])
-                {
-                    if (HorizontalPrune(map, a, b, road.Count))
-                    {
-                        result = false;
-                    }
-                    else
-                    {
-                        result = DClean(map, a, b, path, road) || UClean(map, a, b, path, road);
-                    }
-                }
-                else
-                {
-                    result = DClean(map, a, b, path, road);
-                }
-            }
-            else
-            {
-                if (map[a - 1][b])
-                {
-                    result = UClean(map, a, b, path, road);
-                }
-                else
-                {
-                    result = road.Count == restCount;
-                }
-            }
-            if (result)
-            {
-                path.Push('l');
-            }
-            else
-            {
-                while (road.Count > roadCount)
-                {
-                    map[road.Pop()][road.Pop()] = true;
-                }
-            }
-            return result;
-        }
-
-        private bool DClean(bool[][] map, int a, int b, Stack<char> path, Stack<int> road)
-        {
-            bool result;
-            int roadCount = road.Count;
-            a++;
-            do
-            {
-                map[a][b] = false;
-                road.Push(b);
-                road.Push(a);
-                a++;
-            } while (map[a][b]);
-            a--;
             if (map[a][b + 1])
             {
-                if (map[a][b - 1])
+                work.Push(1);
+                work.Push(0);
+            }
+            while (work.Count > 0)
+            {
+                movex = work.Pop();
+                if (movex == 2)
                 {
-                    if (VerticalPrune(map, a, b, road.Count))
+                    roadCount = restore.Pop();
+                    while (roadx.Count > roadCount)
                     {
-                        result = false;
+                        map[roadx.Pop()][roady.Pop()] = true;
+                    }
+                    a = roadx.Peek();
+                    b = roady.Peek();
+                }
+                else
+                {
+                    movey = work.Pop();
+                    work.Push(2);
+                    restore.Push(roadx.Count);
+                    do
+                    {
+                        if (movex == 0)
+                        {
+                            b += movey;
+                            do
+                            {
+                                map[a][b] = false;
+                                roadx.Push(a);
+                                roady.Push(b);
+                                b += movey;
+                            } while (map[a][b]);
+                            b -= movey;
+                            if (map[a + 1][b] == map[a - 1][b])
+                            {
+                                oneway = false;
+                            }
+                            else
+                            {
+                                oneway = true;
+                                movex = map[a + 1][b] ? 1 : -1;
+                                movey = 0;
+                            }
+                        }
+                        else
+                        {
+                            a += movex;
+                            do
+                            {
+                                map[a][b] = false;
+                                roadx.Push(a);
+                                roady.Push(b);
+                                a += movex;
+                            } while (map[a][b]);
+                            a -= movex;
+                            if (map[a][b + 1] == map[a][b - 1])
+                            {
+                                oneway = false;
+                            }
+                            else
+                            {
+                                oneway = true;
+                                movey = map[a][b + 1] ? 1 : -1;
+                                movex = 0;
+                            }
+                        }
+                    } while (oneway);
+                    if (movex == 0)
+                    {
+                        if (map[a + 1][b])
+                        {
+                            a++;
+                            do
+                            {
+                                map[a][b] = false;
+                                horizontalConnect.Push(b);
+                                horizontalConnect.Push(a);
+                                connect.Push(b);
+                                connect.Push(a);
+                                a++;
+                            } while (map[a][b]);
+                            do
+                            {
+                                while (horizontalConnect.Count > 0)
+                                {
+                                    a = horizontalConnect.Pop();
+                                    movex = horizontalConnect.Pop();
+                                    b = movex + 1;
+                                    while (map[a][b])
+                                    {
+                                        map[a][b] = false;
+                                        verticalConnect.Push(b);
+                                        verticalConnect.Push(a);
+                                        connect.Push(b);
+                                        connect.Push(a);
+                                        b++;
+                                    }
+                                    b = movex - 1;
+                                    while (map[a][b])
+                                    {
+                                        map[a][b] = false;
+                                        verticalConnect.Push(b);
+                                        verticalConnect.Push(a);
+                                        connect.Push(b);
+                                        connect.Push(a);
+                                        b--;
+                                    }
+                                }
+                                while (verticalConnect.Count > 0)
+                                {
+                                    movex = verticalConnect.Pop();
+                                    b = verticalConnect.Pop();
+                                    a = movex + 1;
+                                    while (map[a][b])
+                                    {
+                                        map[a][b] = false;
+                                        horizontalConnect.Push(b);
+                                        horizontalConnect.Push(a);
+                                        connect.Push(b);
+                                        connect.Push(a);
+                                        a++;
+                                    }
+                                    a = movex - 1;
+                                    while (map[a][b])
+                                    {
+                                        map[a][b] = false;
+                                        horizontalConnect.Push(b);
+                                        horizontalConnect.Push(a);
+                                        connect.Push(b);
+                                        connect.Push(a);
+                                        a--;
+                                    }
+                                }
+                            } while (horizontalConnect.Count > 0);
+                            roadCount = connect.Count / 2;
+                            while (connect.Count > 0)
+                            {
+                                map[connect.Pop()][connect.Pop()] = true;
+                            }
+                            if (roadCount + roadx.Count == restCount)
+                            {
+                                work.Push(0);
+                                work.Push(-1);
+                                work.Push(0);
+                                work.Push(1);
+                                a = roadx.Peek();
+                                b = roady.Peek();
+                            }
+                        }
+                        else
+                        {
+                            if (roadx.Count == restCount)
+                            {
+                                return true;
+                            }
+                        }
                     }
                     else
                     {
-                        result = RClean(map, a, b, path, road) || LClean(map, a, b, path, road);
+                        if (map[a][b + 1])
+                        {
+                            b++;
+                            do
+                            {
+                                map[a][b] = false;
+                                verticalConnect.Push(b);
+                                verticalConnect.Push(a);
+                                connect.Push(b);
+                                connect.Push(a);
+                                b++;
+                            } while (map[a][b]);
+                            do
+                            {
+                                while (verticalConnect.Count > 0)
+                                {
+                                    movex = verticalConnect.Pop();
+                                    b = verticalConnect.Pop();
+                                    a = movex + 1;
+                                    while (map[a][b])
+                                    {
+                                        map[a][b] = false;
+                                        horizontalConnect.Push(b);
+                                        horizontalConnect.Push(a);
+                                        connect.Push(b);
+                                        connect.Push(a);
+                                        a++;
+                                    }
+                                    a = movex - 1;
+                                    while (map[a][b])
+                                    {
+                                        map[a][b] = false;
+                                        horizontalConnect.Push(b);
+                                        horizontalConnect.Push(a);
+                                        connect.Push(b);
+                                        connect.Push(a);
+                                        a--;
+                                    }
+                                }
+                                while (horizontalConnect.Count > 0)
+                                {
+                                    a = horizontalConnect.Pop();
+                                    movex = horizontalConnect.Pop();
+                                    b = movex + 1;
+                                    while (map[a][b])
+                                    {
+                                        map[a][b] = false;
+                                        verticalConnect.Push(b);
+                                        verticalConnect.Push(a);
+                                        connect.Push(b);
+                                        connect.Push(a);
+                                        b++;
+                                    }
+                                    b = movex - 1;
+                                    while (map[a][b])
+                                    {
+                                        map[a][b] = false;
+                                        verticalConnect.Push(b);
+                                        verticalConnect.Push(a);
+                                        connect.Push(b);
+                                        connect.Push(a);
+                                        b--;
+                                    }
+                                }
+                            } while (verticalConnect.Count > 0);
+                            roadCount = connect.Count / 2;
+                            while (connect.Count > 0)
+                            {
+                                map[connect.Pop()][connect.Pop()] = true;
+                            }
+                            if (roadCount + roadx.Count == restCount)
+                            {
+                                work.Push(-1);
+                                work.Push(0);
+                                work.Push(1);
+                                work.Push(0);
+                                a = roadx.Peek();
+                                b = roady.Peek();
+                            }
+                        }
+                        else
+                        {
+                            if (roadx.Count == restCount)
+                            {
+                                return true;
+                            }
+                        }
                     }
                 }
-                else
-                {
-                    result = RClean(map, a, b, path, road);
-                }
             }
-            else
-            {
-                if (map[a][b - 1])
-                {
-                    result = LClean(map, a, b, path, road);
-                }
-                else
-                {
-                    result = road.Count == restCount;
-                }
-            }
-            if (result)
-            {
-                path.Push('d');
-            }
-            else
-            {
-                while (road.Count > roadCount)
-                {
-                    map[road.Pop()][road.Pop()] = true;
-                }
-            }
-            return result;
+            map[a][b] = true;
+            roadx.Pop();
+            roady.Pop();
+            return false;
         }
-
-        private bool UClean(bool[][] map, int a, int b, Stack<char> path, Stack<int> road)
-        {
-            bool result;
-            int roadCount = road.Count;
-            a--;
-            do
-            {
-                map[a][b] = false;
-                road.Push(b);
-                road.Push(a);
-                a--;
-            } while (map[a][b]);
-            a++;
-            if (map[a][b + 1])
-            {
-                if (map[a][b - 1])
-                {
-                    if (VerticalPrune(map, a, b, road.Count))
-                    {
-                        result = false;
-                    }
-                    else
-                    {
-                        result = RClean(map, a, b, path, road) || LClean(map, a, b, path, road);
-                    }
-                }
-                else
-                {
-                    result = RClean(map, a, b, path, road);
-                }
-            }
-            else
-            {
-                if (map[a][b - 1])
-                {
-                    result = LClean(map, a, b, path, road);
-                }
-                else
-                {
-                    result = road.Count == restCount;
-                }
-            }
-            if (result)
-            {
-                path.Push('u');
-            }
-            else
-            {
-                while (road.Count > roadCount)
-                {
-                    map[road.Pop()][road.Pop()] = true;
-                }
-            }
-            return result;
-        }
-
-        private bool HorizontalPrune(bool[][] map, int a, int b, int roadCount)
-        {
-            Stack<int> horizontalConnect = new Stack<int>(), verticalConnect = new Stack<int>(), connect = new Stack<int>();
-            a++;
-            int c;
-            do
-            {
-                map[a][b] = false;
-                horizontalConnect.Push(b);
-                horizontalConnect.Push(a);
-                connect.Push(b);
-                connect.Push(a);
-                a++;
-            } while (map[a][b]);
-            do
-            {
-                while (horizontalConnect.Count > 0)
-                {
-                    a = horizontalConnect.Pop();
-                    c = horizontalConnect.Pop();
-                    b = c + 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        verticalConnect.Push(b);
-                        verticalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        b++;
-                    }
-                    b = c - 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        verticalConnect.Push(b);
-                        verticalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        b--;
-                    }
-                }
-                while (verticalConnect.Count > 0)
-                {
-                    c = verticalConnect.Pop();
-                    b = verticalConnect.Pop();
-                    a = c + 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        horizontalConnect.Push(b);
-                        horizontalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        a++;
-                    }
-                    a = c - 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        horizontalConnect.Push(b);
-                        horizontalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        a--;
-                    }
-                }
-            } while (horizontalConnect.Count > 0);
-            int count = connect.Count;
-            while (connect.Count > 0)
-            {
-                map[connect.Pop()][connect.Pop()] = true;
-            }
-            return count + roadCount < restCount;
-        }
-
-        private bool VerticalPrune(bool[][] map, int a, int b, int roadCount)
-        {
-            Stack<int> horizontalConnect = new Stack<int>(), verticalConnect = new Stack<int>(), connect = new Stack<int>();
-            b++;
-            int c;
-            do
-            {
-                map[a][b] = false;
-                verticalConnect.Push(b);
-                verticalConnect.Push(a);
-                connect.Push(b);
-                connect.Push(a);
-                b++;
-            } while (map[a][b]);
-            do
-            {
-                while (verticalConnect.Count > 0)
-                {
-                    c = verticalConnect.Pop();
-                    b = verticalConnect.Pop();
-                    a = c + 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        horizontalConnect.Push(b);
-                        horizontalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        a++;
-                    }
-                    a = c - 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        horizontalConnect.Push(b);
-                        horizontalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        a--;
-                    }
-                }
-                while (horizontalConnect.Count > 0)
-                {
-                    a = horizontalConnect.Pop();
-                    c = horizontalConnect.Pop();
-                    b = c + 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        verticalConnect.Push(b);
-                        verticalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        b++;
-                    }
-                    b = c - 1;
-                    while (map[a][b])
-                    {
-                        map[a][b] = false;
-                        verticalConnect.Push(b);
-                        verticalConnect.Push(a);
-                        connect.Push(b);
-                        connect.Push(a);
-                        b--;
-                    }
-                }
-            } while (verticalConnect.Count > 0);
-            int count = connect.Count;
-            while (connect.Count > 0)
-            {
-                map[connect.Pop()][connect.Pop()] = true;
-            }
-            return count + roadCount < restCount;
-        }
-        #endregion
     }
 }
