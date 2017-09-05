@@ -78,57 +78,65 @@ namespace Roomba
 
         string Clean()
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            X = x + 2;
-            Y = y + 2;
-            mapArray = new Stack<char>(mapStr);
-            _map = new bool[X][];
-            restPoints.Clear();
-            for (int i = x; i > 0; i--)
+            try
             {
-                _map[i] = new bool[Y];
-                for (int j = y; j > 0; j--)
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+                X = x + 2;
+                Y = y + 2;
+                mapArray = new Stack<char>(mapStr);
+                _map = new bool[X][];
+                restPoints.Clear();
+                for (int i = x; i > 0; i--)
                 {
-                    if (mapArray.Pop() == '0')
+                    _map[i] = new bool[Y];
+                    for (int j = y; j > 0; j--)
                     {
-                        _map[i][j] = true;
-                        restPoints.Push(j);
-                        restPoints.Push(i);
+                        if (mapArray.Pop() == '0')
+                        {
+                            _map[i][j] = true;
+                            restPoints.Push(j);
+                            restPoints.Push(i);
+                        }
                     }
                 }
+                _map[0] = new bool[Y];
+                _map[X - 1] = new bool[Y];
+                restCount = restPoints.Count / 2;
+                if (startPoint == 0)
+                {
+                    startPoint = restCount;
+                }
+                while (restPoints.Count / 2 > startPoint)
+                {
+                    restPoints.Pop();
+                    restPoints.Pop();
+                }
+                startPoint = 0;
+                List<Task> taskList = new List<Task>();
+                done = false;
+                for (int i = 0; i < threadCount; i++)
+                {
+                    Task task = new Task(CleanUnit);
+                    task.Start();
+                    taskList.Add(task);
+                }
+                Task.WaitAll(taskList.ToArray());
+                StringBuilder sb = new StringBuilder();
+                while (path.Count > 0)
+                {
+                    sb.Append(path.Pop());
+                }
+                string result = string.Format("x={0}&y={1}&path={2}", _a, _b, sb);
+                sw.Stop();
+                Console.WriteLine(sw.Elapsed);
+                return result;
             }
-            _map[0] = new bool[Y];
-            _map[X - 1] = new bool[Y];
-            restCount = restPoints.Count / 2;
-            if (startPoint == 0)
+            catch (Exception e)
             {
-                startPoint = restCount;
+                Console.WriteLine(e.Message);
+                return "";
             }
-            while (restPoints.Count / 2 > startPoint)
-            {
-                restPoints.Pop();
-                restPoints.Pop();
-            }
-            startPoint = 0;
-            List<Task> taskList = new List<Task>();
-            done = false;
-            for (int i = 0; i < threadCount; i++)
-            {
-                Task task = new Task(CleanUnit);
-                task.Start();
-                taskList.Add(task);
-            }
-            Task.WaitAll(taskList.ToArray());
-            StringBuilder sb = new StringBuilder();
-            while (path.Count > 0)
-            {
-                sb.Append(path.Pop());
-            }
-            string result = string.Format("x={0}&y={1}&path={2}", _a, _b, sb);
-            sw.Stop();
-            Console.WriteLine(sw.Elapsed);
-            return result;
         }
 
         void CleanUnit()
@@ -354,9 +362,15 @@ namespace Roomba
                                             move = 0;
                                             if (map[a][b + 1]) move++;
                                             if (map[a + 1][b]) move++;
-                                            if (move < 2 && map[a][b - 1]) move++;
-                                            if (move < 2 && map[a - 1][b]) move++;
-                                            if (move < 2) roadCount++;
+                                            if (move < 2)
+                                            {
+                                                if (map[a][b - 1]) move++;
+                                                if (move < 2)
+                                                {
+                                                    if (map[a - 1][b]) move++;
+                                                    if (move < 2) roadCount++;
+                                                }
+                                            }
                                         } while (roadCount < 2 && horizontalConnect.Count > 0);
                                         if (roadCount < 2)
                                         {
@@ -504,9 +518,15 @@ namespace Roomba
                                             move = 0;
                                             if (map[a][b + 1]) move++;
                                             if (map[a + 1][b]) move++;
-                                            if (move < 2 && map[a][b - 1]) move++;
-                                            if (move < 2 && map[a - 1][b]) move++;
-                                            if (move < 2) roadCount++;
+                                            if (move < 2)
+                                            {
+                                                if (map[a][b - 1]) move++;
+                                                if (move < 2)
+                                                {
+                                                    if (map[a - 1][b]) move++;
+                                                    if (move < 2) roadCount++;
+                                                }
+                                            }
                                         } while (roadCount < 2 && verticalConnect.Count > 0);
                                         if (roadCount < 2)
                                         {
