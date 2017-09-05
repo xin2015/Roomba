@@ -23,8 +23,9 @@ namespace Roomba
         int _b;
         bool done;
         Stack<char> path;
-        private int threadCount;
-        private object locker;
+        int threadCount;
+        object locker;
+        int startPoint;
 
         public Roomba()
         {
@@ -35,6 +36,10 @@ namespace Roomba
                 threadCount = 2;
             }
             locker = new object();
+            if (!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["startPoint"], out startPoint))
+            {
+                startPoint = 0;
+            }
         }
 
         public void Auto()
@@ -71,7 +76,7 @@ namespace Roomba
             }
         }
 
-        public string Clean()
+        string Clean()
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -96,6 +101,16 @@ namespace Roomba
             _map[0] = new bool[Y];
             _map[X - 1] = new bool[Y];
             restCount = restPoints.Count / 2;
+            if (startPoint == 0)
+            {
+                startPoint = restCount;
+            }
+            while (restPoints.Count / 2 > startPoint)
+            {
+                restPoints.Pop();
+                restPoints.Pop();
+            }
+            startPoint = 0;
             List<Task> taskList = new List<Task>();
             done = false;
             for (int i = 0; i < threadCount; i++)
