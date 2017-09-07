@@ -8,8 +8,7 @@ namespace Roomba
         {
             try
             {
-                //Roomba roomba = new Roomba();
-                Temp roomba = new Temp();
+                Roomba roomba = new Roomba();
                 roomba.Auto();
             }
             catch (Exception e)
