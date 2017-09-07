@@ -10,6 +10,7 @@ namespace Roomba
             {
                 Roomba roomba = new Roomba();
                 roomba.Auto();
+                Console.ReadLine();
             }
             catch (Exception e)
             {
