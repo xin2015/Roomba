@@ -39,6 +39,10 @@ namespace Roomba
             {
                 startPoint = 0;
             }
+            if (!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["level"], out level))
+            {
+                level = 0;
+            }
         }
 
         public void Auto()
@@ -53,7 +57,7 @@ namespace Roomba
                 HttpResult hr;
                 while (true)
                 {
-                    hi.URL = "http://www.qlcoder.com/train/autocr";
+                    hi.URL = level == 0 ? "http://www.qlcoder.com/train/autocr" : string.Format("http://www.qlcoder.com/train/autocr?level={0}", level);
                     hr = hh.GetHtml(hi);
                     string html = hr.Html;
                     html = html.Substring(html.IndexOf("level="));
@@ -67,6 +71,7 @@ namespace Roomba
                     hi.URL = string.Format("http://www.qlcoder.com/train/crcheck?{0}", Clean());
                     Console.WriteLine("level:{0} end, {1}", level, DateTime.Now.ToString());
                     hr = hh.GetHtml(hi);
+                    level++;
                 }
             }
             catch (Exception e)
@@ -142,12 +147,20 @@ namespace Roomba
         {
             int a = 0, b = 0;
             bool[][] map = new bool[X][];
+            bool[][] connectMap = new bool[X][];
+            int[][] wallMap = new int[X][];
             for (int i = 0; i < X; i++)
             {
                 map[i] = new bool[Y];
+                connectMap[i] = new bool[Y];
+                wallMap[i] = new int[Y];
                 for (int j = 0; j < Y; j++)
                 {
-                    map[i][j] = _map[i][j];
+                    if (_map[i][j])
+                    {
+                        map[i][j] = true;
+                        connectMap[i][j] = true;
+                    }
                 }
             }
             Stack<int> roadx = new Stack<int>(), roady = new Stack<int>();
@@ -166,7 +179,7 @@ namespace Roomba
                         break;
                     }
                 }
-                if (Clean(map, a, b, roadx, roady))
+                if (Clean(map, connectMap, a, b, roadx, roady, wallMap))
                 {
                     lock (locker)
                     {
@@ -212,18 +225,19 @@ namespace Roomba
             }
         }
 
-        bool Clean(bool[][] map, int a, int b, Stack<int> roadx, Stack<int> roady)
+        bool Clean(bool[][] map, bool[][] connectMap, int a, int b, Stack<int> roadx, Stack<int> roady, int[][] wallMap)
         {
             Stack<int> moveStack = new Stack<int>();
             Stack<bool> directionStack = new Stack<bool>();
             Stack<int> restore = new Stack<int>();
             Stack<int> horizontalConnect = new Stack<int>(), verticalConnect = new Stack<int>();
-            Stack<int> dangerStack = new Stack<int>();
             int roadCount;
             int move;
             bool oneway;
-            bool danger;
+            int danger;
+            bool prune;
             map[a][b] = false;
+            connectMap[a][b] = false;
             roadx.Push(a);
             roady.Push(b);
             if (map[a - 1][b])
@@ -254,7 +268,10 @@ namespace Roomba
                     roadCount = restore.Pop();
                     while (roadx.Count > roadCount)
                     {
-                        map[roadx.Pop()][roady.Pop()] = true;
+                        a = roadx.Pop();
+                        b = roady.Pop();
+                        map[a][b] = true;
+                        connectMap[a][b] = true;
                     }
                     a = roadx.Peek();
                     b = roady.Peek();
@@ -272,6 +289,7 @@ namespace Roomba
                             do
                             {
                                 map[a][b] = false;
+                                connectMap[a][b] = false;
                                 roadx.Push(a);
                                 roady.Push(b);
                                 b += move;
@@ -283,115 +301,115 @@ namespace Roomba
                                 {
                                     oneway = false;
                                     roadCount = roadx.Count;
+                                    danger = 0;
+                                    prune = true;
+                                    map[a][b] = true;
                                     a++;
                                     do
                                     {
-                                        map[a][b] = false;
+                                        connectMap[a][b] = false;
                                         roadx.Push(a);
                                         roady.Push(b);
                                         horizontalConnect.Push(b);
                                         horizontalConnect.Push(a);
                                         a++;
-                                    } while (map[a][b]);
+                                    } while (connectMap[a][b]);
+                                    wallMap[a - 1][b]++;
                                     do
                                     {
-                                        while (horizontalConnect.Count > 0)
+                                        while (horizontalConnect.Count > 0 && prune)
                                         {
                                             a = horizontalConnect.Pop();
                                             move = horizontalConnect.Pop();
                                             b = move + 1;
-                                            while (map[a][b])
+                                            while (connectMap[a][b])
                                             {
-                                                map[a][b] = false;
+                                                connectMap[a][b] = false;
                                                 roadx.Push(a);
                                                 roady.Push(b);
                                                 verticalConnect.Push(b);
                                                 verticalConnect.Push(a);
                                                 b++;
                                             }
-                                            danger = b == move + 1;
-                                            b = move - 1;
-                                            while (map[a][b])
+                                            if (!map[a][b])
                                             {
-                                                map[a][b] = false;
+                                                wallMap[a][b - 1]++;
+                                            }
+                                            b = move - 1;
+                                            while (connectMap[a][b])
+                                            {
+                                                connectMap[a][b] = false;
                                                 roadx.Push(a);
                                                 roady.Push(b);
                                                 verticalConnect.Push(b);
                                                 verticalConnect.Push(a);
                                                 b--;
                                             }
-                                            if (danger && b == move - 1)
+                                            if (!map[a][b])
                                             {
-                                                dangerStack.Push(move);
-                                                dangerStack.Push(a);
+                                                wallMap[a][b + 1]++;
                                             }
+                                            if (wallMap[a][move] == 3)
+                                            {
+                                                danger++;
+                                                if (danger == 2)
+                                                {
+                                                    prune = false;
+                                                }
+                                            }
+                                            wallMap[a][move] = 0;
                                         }
-                                        while (verticalConnect.Count > 0)
+                                        while (verticalConnect.Count > 0 && prune)
                                         {
                                             move = verticalConnect.Pop();
                                             b = verticalConnect.Pop();
                                             a = move + 1;
-                                            while (map[a][b])
+                                            while (connectMap[a][b])
                                             {
-                                                map[a][b] = false;
+                                                connectMap[a][b] = false;
                                                 roadx.Push(a);
                                                 roady.Push(b);
                                                 horizontalConnect.Push(b);
                                                 horizontalConnect.Push(a);
                                                 a++;
                                             }
-                                            danger = a == move + 1;
-                                            a = move - 1;
-                                            while (map[a][b])
+                                            if (!map[a][b])
                                             {
-                                                map[a][b] = false;
+                                                wallMap[a - 1][b]++;
+                                            }
+                                            a = move - 1;
+                                            while (connectMap[a][b])
+                                            {
+                                                connectMap[a][b] = false;
                                                 roadx.Push(a);
                                                 roady.Push(b);
                                                 horizontalConnect.Push(b);
                                                 horizontalConnect.Push(a);
                                                 a--;
                                             }
-                                            if (danger && a == move - 1)
+                                            if (!map[a][b])
                                             {
-                                                dangerStack.Push(b);
-                                                dangerStack.Push(move);
+                                                wallMap[a + 1][b]++;
                                             }
+                                            if (wallMap[move][b] == 3)
+                                            {
+                                                danger++;
+                                                if (danger == 2)
+                                                {
+                                                    prune = false;
+                                                }
+                                            }
+                                            wallMap[move][b] = 0;
                                         }
-                                    } while (horizontalConnect.Count > 0);
-                                    if (roadx.Count == restCount)
+                                    } while (horizontalConnect.Count > 0 && prune);
+                                    if (prune)
                                     {
-                                        while (roadx.Count > roadCount)
+                                        if (roadx.Count == restCount)
                                         {
-                                            map[roadx.Pop()][roady.Pop()] = true;
-                                        }
-                                        roadCount = 0;
-                                        map[roadx.Peek()][roady.Peek()] = true;
-                                        do
-                                        {
-                                            a = dangerStack.Pop();
-                                            b = dangerStack.Pop();
-                                            if (map[a][b + 1])
+                                            while (roadx.Count > roadCount)
                                             {
-                                                if (map[a + 1][b] || map[a][b - 1] || map[a - 1][b])
-                                                {
-                                                    continue;
-                                                }
+                                                connectMap[roadx.Pop()][roady.Pop()] = true;
                                             }
-                                            else if (map[a + 1][b])
-                                            {
-                                                if (map[a][b - 1] || map[a - 1][b])
-                                                {
-                                                    continue;
-                                                }
-                                            }
-                                            else if (map[a][b - 1] && map[a - 1][b])
-                                            {
-                                                continue;
-                                            }
-                                            roadCount++;
-                                        } while (roadCount < 2 && dangerStack.Count > 0);
-                                        if (roadCount < 2)
-                                        {
                                             moveStack.Push(-1);
                                             directionStack.Push(false);
                                             moveStack.Push(1);
@@ -402,16 +420,26 @@ namespace Roomba
                                         }
                                         else
                                         {
-                                            dangerStack.Clear();
+                                            while (roadx.Count > roadCount)
+                                            {
+                                                connectMap[roadx.Pop()][roady.Pop()] = true;
+                                            }
                                         }
                                     }
                                     else
                                     {
                                         while (roadx.Count > roadCount)
                                         {
-                                            map[roadx.Pop()][roady.Pop()] = true;
+                                            connectMap[roadx.Pop()][roady.Pop()] = true;
                                         }
-                                        dangerStack.Clear();
+                                        while (horizontalConnect.Count > 0)
+                                        {
+                                            wallMap[horizontalConnect.Pop()][horizontalConnect.Pop()] = 0;
+                                        }
+                                        while (verticalConnect.Count > 0)
+                                        {
+                                            wallMap[verticalConnect.Pop()][verticalConnect.Pop()] = 0;
+                                        }
                                     }
                                 }
                                 else
@@ -446,6 +474,7 @@ namespace Roomba
                             do
                             {
                                 map[a][b] = false;
+                                connectMap[a][b] = false;
                                 roadx.Push(a);
                                 roady.Push(b);
                                 a += move;
@@ -457,115 +486,115 @@ namespace Roomba
                                 {
                                     oneway = false;
                                     roadCount = roadx.Count;
+                                    danger = 0;
+                                    prune = true;
+                                    map[a][b] = true;
                                     b++;
                                     do
                                     {
-                                        map[a][b] = false;
+                                        connectMap[a][b] = false;
                                         roadx.Push(a);
                                         roady.Push(b);
                                         verticalConnect.Push(b);
                                         verticalConnect.Push(a);
                                         b++;
-                                    } while (map[a][b]);
+                                    } while (connectMap[a][b]);
+                                    wallMap[a][b - 1]++;
                                     do
                                     {
-                                        while (verticalConnect.Count > 0)
+                                        while (verticalConnect.Count > 0 && prune)
                                         {
                                             move = verticalConnect.Pop();
                                             b = verticalConnect.Pop();
                                             a = move + 1;
-                                            while (map[a][b])
+                                            while (connectMap[a][b])
                                             {
-                                                map[a][b] = false;
+                                                connectMap[a][b] = false;
                                                 roadx.Push(a);
                                                 roady.Push(b);
                                                 horizontalConnect.Push(b);
                                                 horizontalConnect.Push(a);
                                                 a++;
                                             }
-                                            danger = a == move + 1;
-                                            a = move - 1;
-                                            while (map[a][b])
+                                            if (!map[a][b])
                                             {
-                                                map[a][b] = false;
+                                                wallMap[a - 1][b]++;
+                                            }
+                                            a = move - 1;
+                                            while (connectMap[a][b])
+                                            {
+                                                connectMap[a][b] = false;
                                                 roadx.Push(a);
                                                 roady.Push(b);
                                                 horizontalConnect.Push(b);
                                                 horizontalConnect.Push(a);
                                                 a--;
                                             }
-                                            if (danger && a == move - 1)
+                                            if (!map[a][b])
                                             {
-                                                dangerStack.Push(b);
-                                                dangerStack.Push(move);
+                                                wallMap[a + 1][b]++;
                                             }
+                                            if (wallMap[move][b] == 3)
+                                            {
+                                                danger++;
+                                                if (danger == 2)
+                                                {
+                                                    prune = false;
+                                                }
+                                            }
+                                            wallMap[move][b] = 0;
                                         }
-                                        while (horizontalConnect.Count > 0)
+                                        while (horizontalConnect.Count > 0 && prune)
                                         {
                                             a = horizontalConnect.Pop();
                                             move = horizontalConnect.Pop();
                                             b = move + 1;
-                                            while (map[a][b])
+                                            while (connectMap[a][b])
                                             {
-                                                map[a][b] = false;
+                                                connectMap[a][b] = false;
                                                 roadx.Push(a);
                                                 roady.Push(b);
                                                 verticalConnect.Push(b);
                                                 verticalConnect.Push(a);
                                                 b++;
                                             }
-                                            danger = b == move + 1;
-                                            b = move - 1;
-                                            while (map[a][b])
+                                            if (!map[a][b])
                                             {
-                                                map[a][b] = false;
+                                                wallMap[a][b - 1]++;
+                                            }
+                                            b = move - 1;
+                                            while (connectMap[a][b])
+                                            {
+                                                connectMap[a][b] = false;
                                                 roadx.Push(a);
                                                 roady.Push(b);
                                                 verticalConnect.Push(b);
                                                 verticalConnect.Push(a);
                                                 b--;
                                             }
-                                            if (danger && b == move - 1)
+                                            if (!map[a][b])
                                             {
-                                                dangerStack.Push(move);
-                                                dangerStack.Push(a);
+                                                wallMap[a][b + 1]++;
                                             }
+                                            if (wallMap[a][move] == 3)
+                                            {
+                                                danger++;
+                                                if (danger == 2)
+                                                {
+                                                    prune = false;
+                                                }
+                                            }
+                                            wallMap[a][move] = 0;
                                         }
-                                    } while (verticalConnect.Count > 0);
-                                    if (roadx.Count == restCount)
+                                    } while (verticalConnect.Count > 0 && prune);
+                                    if (prune)
                                     {
-                                        while (roadx.Count > roadCount)
+                                        if (roadx.Count == restCount)
                                         {
-                                            map[roadx.Pop()][roady.Pop()] = true;
-                                        }
-                                        roadCount = 0;
-                                        map[roadx.Peek()][roady.Peek()] = true;
-                                        do
-                                        {
-                                            a = dangerStack.Pop();
-                                            b = dangerStack.Pop();
-                                            if (map[a][b + 1])
+                                            while (roadx.Count > roadCount)
                                             {
-                                                if (map[a + 1][b] || map[a][b - 1] || map[a - 1][b])
-                                                {
-                                                    continue;
-                                                }
+                                                connectMap[roadx.Pop()][roady.Pop()] = true;
                                             }
-                                            else if (map[a + 1][b])
-                                            {
-                                                if (map[a][b - 1] || map[a - 1][b])
-                                                {
-                                                    continue;
-                                                }
-                                            }
-                                            else if (map[a][b - 1] && map[a - 1][b])
-                                            {
-                                                continue;
-                                            }
-                                            roadCount++;
-                                        } while (roadCount < 2 && dangerStack.Count > 0);
-                                        if (roadCount < 2)
-                                        {
                                             moveStack.Push(-1);
                                             directionStack.Push(true);
                                             moveStack.Push(1);
@@ -576,16 +605,26 @@ namespace Roomba
                                         }
                                         else
                                         {
-                                            dangerStack.Clear();
+                                            while (roadx.Count > roadCount)
+                                            {
+                                                connectMap[roadx.Pop()][roady.Pop()] = true;
+                                            }
                                         }
                                     }
                                     else
                                     {
                                         while (roadx.Count > roadCount)
                                         {
-                                            map[roadx.Pop()][roady.Pop()] = true;
+                                            connectMap[roadx.Pop()][roady.Pop()] = true;
                                         }
-                                        dangerStack.Clear();
+                                        while (horizontalConnect.Count > 0)
+                                        {
+                                            wallMap[horizontalConnect.Pop()][horizontalConnect.Pop()] = 0;
+                                        }
+                                        while (verticalConnect.Count > 0)
+                                        {
+                                            wallMap[verticalConnect.Pop()][verticalConnect.Pop()] = 0;
+                                        }
                                     }
                                 }
                                 else
@@ -618,6 +657,7 @@ namespace Roomba
                 }
             }
             map[a][b] = true;
+            connectMap[a][b] = true;
             roadx.Pop();
             roady.Pop();
             return false;
