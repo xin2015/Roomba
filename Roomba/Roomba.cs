@@ -150,6 +150,7 @@ namespace Roomba
             int a = 0, b = 0;
             bool[][] map = new bool[X][];
             int[][] directionMap = new int[X][];
+            int danger = 0;
             for (int i = 0; i < X; i++)
             {
                 map[i] = new bool[Y];
@@ -163,6 +164,11 @@ namespace Roomba
                         if (_map[i + 1][j]) directionMap[i][j]++;
                         if (_map[i][j - 1]) directionMap[i][j]++;
                         if (_map[i - 1][j]) directionMap[i][j]++;
+                        if (directionMap[i][j] == 1)
+                        {
+                            danger++;
+                            Console.WriteLine("x:{0},y:{1} is danger.", i, j);
+                        }
                     }
                 }
             }
@@ -182,7 +188,7 @@ namespace Roomba
                         break;
                     }
                 }
-                if (Clean(map, directionMap, a, b, roadx, roady))
+                if (Clean(map, directionMap, danger, a, b, roadx, roady))
                 {
                     lock (locker)
                     {
@@ -228,7 +234,7 @@ namespace Roomba
             }
         }
 
-        bool Clean(bool[][] map, int[][] directionMap, int a, int b, Stack<int> roadx, Stack<int> roady)
+        bool Clean(bool[][] map, int[][] directionMap, int danger, int a, int b, Stack<int> roadx, Stack<int> roady)
         {
             Stack<int> moveStack = new Stack<int>();
             Stack<bool> directionStack = new Stack<bool>();
@@ -236,8 +242,11 @@ namespace Roomba
             Stack<int> horizontalConnect = new Stack<int>(), verticalConnect = new Stack<int>();
             int roadCount;
             int move;
-            int danger = 0;
             bool prune;
+            if (directionMap[a][b] == 1)
+            {
+                danger--;
+            }
             map[a][b] = false;
             roadx.Push(a);
             roady.Push(b);
@@ -338,7 +347,7 @@ namespace Roomba
                         {
                             danger--;
                         }
-                        if (danger == 2)
+                        if (danger > 1)
                         {
                             prune = false;
                         }
@@ -550,7 +559,7 @@ namespace Roomba
                         {
                             danger--;
                         }
-                        if (danger == 2)
+                        if (danger > 1)
                         {
                             prune = false;
                         }
