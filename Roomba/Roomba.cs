@@ -337,10 +337,10 @@ namespace Roomba
                         if (directionMap[a][b] == 1)
                         {
                             danger--;
-                            if (danger == 2)
-                            {
-                                prune = false;
-                            }
+                        }
+                        if (danger == 2)
+                        {
+                            prune = false;
                         }
                         while (prune && map[a][b + move])
                         {
@@ -549,10 +549,10 @@ namespace Roomba
                         if (directionMap[a][b] == 1)
                         {
                             danger--;
-                            if (danger == 2)
-                            {
-                                prune = false;
-                            }
+                        }
+                        if (danger == 2)
+                        {
+                            prune = false;
                         }
                         while (prune && map[a + move][b])
                         {
