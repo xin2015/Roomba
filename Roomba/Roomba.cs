@@ -246,24 +246,40 @@ namespace Roomba
                 moveStack.Push(-1);
                 directionStack.Push(false);
                 directionMap[a - 1][b]--;
+                if (directionMap[a - 1][b] == 1)
+                {
+                    danger++;
+                }
             }
             if (map[a][b - 1])
             {
                 moveStack.Push(-1);
                 directionStack.Push(true);
                 directionMap[a][b - 1]--;
+                if (directionMap[a][b - 1] == 1)
+                {
+                    danger++;
+                }
             }
             if (map[a + 1][b])
             {
                 moveStack.Push(1);
                 directionStack.Push(false);
                 directionMap[a + 1][b]--;
+                if (directionMap[a + 1][b] == 1)
+                {
+                    danger++;
+                }
             }
             if (map[a][b + 1])
             {
                 moveStack.Push(1);
                 directionStack.Push(true);
                 directionMap[a][b + 1]--;
+                if (directionMap[a][b + 1] == 1)
+                {
+                    danger++;
+                }
             }
             while (moveStack.Count > 0)
             {
@@ -317,18 +333,15 @@ namespace Roomba
                     prune = true;
                     if (directionStack.Peek())
                     {
-                        if (map[a][b - move])
+                        b += move;
+                        if (directionMap[a][b] == 1)
                         {
-                            if (directionMap[a][b - move] == 1)
+                            danger--;
+                            if (danger == 2)
                             {
-                                danger++;
-                                if (danger == 2)
-                                {
-                                    prune = false;
-                                }
+                                prune = false;
                             }
                         }
-                        b += move;
                         while (prune && map[a][b + move])
                         {
                             map[a][b] = false;
@@ -453,6 +466,14 @@ namespace Roomba
                                             directionStack.Push(false);
                                             a = roadx.Peek();
                                             b = roady.Peek();
+                                            if (directionMap[a + 1][b] == 1)
+                                            {
+                                                danger++;
+                                            }
+                                            if (directionMap[a - 1][b] == 1)
+                                            {
+                                                danger++;
+                                            }
                                         }
                                         else
                                         {
@@ -480,6 +501,10 @@ namespace Roomba
                                         moveStack.Push(1);
                                         directionStack.Push(false);
                                         directionMap[a + 1][b]--;
+                                        if (directionMap[a + 1][b] == 1)
+                                        {
+                                            danger++;
+                                        }
                                     }
                                 }
                             }
@@ -502,6 +527,10 @@ namespace Roomba
                                         moveStack.Push(-1);
                                         directionStack.Push(false);
                                         directionMap[a - 1][b]--;
+                                        if (directionMap[a - 1][b] == 1)
+                                        {
+                                            danger++;
+                                        }
                                     }
                                 }
                                 else
@@ -516,18 +545,15 @@ namespace Roomba
                     }
                     else
                     {
-                        if (map[a - move][b])
+                        a += move;
+                        if (directionMap[a][b] == 1)
                         {
-                            if (directionMap[a - move][b] == 1)
+                            danger--;
+                            if (danger == 2)
                             {
-                                danger++;
-                                if (danger == 2)
-                                {
-                                    prune = false;
-                                }
+                                prune = false;
                             }
                         }
-                        a += move;
                         while (prune && map[a + move][b])
                         {
                             map[a][b] = false;
@@ -652,6 +678,14 @@ namespace Roomba
                                             directionStack.Push(true);
                                             a = roadx.Peek();
                                             b = roady.Peek();
+                                            if (directionMap[a][b + 1] == 1)
+                                            {
+                                                danger++;
+                                            }
+                                            if (directionMap[a][b - 1] == 1)
+                                            {
+                                                danger++;
+                                            }
                                         }
                                         else
                                         {
@@ -679,6 +713,10 @@ namespace Roomba
                                         moveStack.Push(1);
                                         directionStack.Push(true);
                                         directionMap[a][b + 1]--;
+                                        if (directionMap[a][b + 1] == 1)
+                                        {
+                                            danger++;
+                                        }
                                     }
                                 }
                             }
@@ -701,6 +739,10 @@ namespace Roomba
                                         moveStack.Push(-1);
                                         directionStack.Push(true);
                                         directionMap[a][b - 1]--;
+                                        if (directionMap[a][b - 1] == 1)
+                                        {
+                                            danger++;
+                                        }
                                     }
                                 }
                                 else
