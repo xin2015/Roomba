@@ -546,6 +546,9 @@ namespace Roomba
                                 {
                                     if (roadx.Count + 1 == restCount)
                                     {
+                                        map[a][b] = false;
+                                        roadx.Push(a);
+                                        roady.Push(b);
                                         return true;
                                     }
                                 }
@@ -758,6 +761,9 @@ namespace Roomba
                                 {
                                     if (roadx.Count + 1 == restCount)
                                     {
+                                        map[a][b] = false;
+                                        roadx.Push(a);
+                                        roady.Push(b);
                                         return true;
                                     }
                                 }
