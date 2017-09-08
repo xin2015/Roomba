@@ -255,7 +255,7 @@ namespace Roomba
                 moveStack.Push(-1);
                 directionStack.Push(false);
                 directionMap[a - 1][b]--;
-                if (directionMap[a - 1][b] == 1)
+                if (directionMap[a - 1][b] < 2)
                 {
                     danger++;
                 }
@@ -265,7 +265,7 @@ namespace Roomba
                 moveStack.Push(-1);
                 directionStack.Push(true);
                 directionMap[a][b - 1]--;
-                if (directionMap[a][b - 1] == 1)
+                if (directionMap[a][b - 1] < 2)
                 {
                     danger++;
                 }
@@ -275,7 +275,7 @@ namespace Roomba
                 moveStack.Push(1);
                 directionStack.Push(false);
                 directionMap[a + 1][b]--;
-                if (directionMap[a + 1][b] == 1)
+                if (directionMap[a + 1][b] < 2)
                 {
                     danger++;
                 }
@@ -285,7 +285,7 @@ namespace Roomba
                 moveStack.Push(1);
                 directionStack.Push(true);
                 directionMap[a][b + 1]--;
-                if (directionMap[a][b + 1] == 1)
+                if (directionMap[a][b + 1] < 2)
                 {
                     danger++;
                 }
@@ -397,8 +397,6 @@ namespace Roomba
                                         map[a][b] = false;
                                         roadx.Push(a);
                                         roady.Push(b);
-                                        directionMap[a + 1][b]--;
-                                        directionMap[a - 1][b]--;
                                         roadCount = roadx.Count;
                                         a++;
                                         do
@@ -475,6 +473,8 @@ namespace Roomba
                                             directionStack.Push(false);
                                             a = roadx.Peek();
                                             b = roady.Peek();
+                                            directionMap[a + 1][b]--;
+                                            directionMap[a - 1][b]--;
                                             if (directionMap[a + 1][b] == 1)
                                             {
                                                 danger++;
@@ -486,10 +486,15 @@ namespace Roomba
                                         }
                                         else
                                         {
-                                            while (roadx.Count > roadCount)
+                                            do
                                             {
                                                 map[roadx.Pop()][roady.Pop()] = true;
-                                            }
+                                                if (roadx.Count == roadCount)
+                                                {
+                                                    break;
+                                                }
+                                            } while (true);
+                                            map[roadx.Pop()][roady.Pop()] = true;
                                         }
                                     }
                                 }
@@ -497,12 +502,19 @@ namespace Roomba
                                 {
                                     if (directionMap[a + 1][b] == 1)
                                     {
-                                        if (roadx.Count + 2 != restCount)
+                                        if (roadx.Count + 2 == restCount)
                                         {
-                                            prune = false;
+                                            map[a][b] = false;
+                                            roadx.Push(a);
+                                            roady.Push(b);
+                                            a++;
+                                            map[a][b] = false;
+                                            roadx.Push(a);
+                                            roady.Push(b);
+                                            return true;
                                         }
                                     }
-                                    if (prune)
+                                    else
                                     {
                                         map[a][b] = false;
                                         roadx.Push(a);
@@ -523,12 +535,19 @@ namespace Roomba
                                 {
                                     if (directionMap[a - 1][b] == 1)
                                     {
-                                        if (roadx.Count + 2 != restCount)
+                                        if (roadx.Count + 2 == restCount)
                                         {
-                                            prune = false;
+                                            map[a][b] = false;
+                                            roadx.Push(a);
+                                            roady.Push(b);
+                                            a--;
+                                            map[a][b] = false;
+                                            roadx.Push(a);
+                                            roady.Push(b);
+                                            return true;
                                         }
                                     }
-                                    if (prune)
+                                    else
                                     {
                                         map[a][b] = false;
                                         roadx.Push(a);
@@ -612,8 +631,6 @@ namespace Roomba
                                         map[a][b] = false;
                                         roadx.Push(a);
                                         roady.Push(b);
-                                        directionMap[a][b + 1]--;
-                                        directionMap[a][b - 1]--;
                                         roadCount = roadx.Count;
                                         b++;
                                         do
@@ -690,6 +707,8 @@ namespace Roomba
                                             directionStack.Push(true);
                                             a = roadx.Peek();
                                             b = roady.Peek();
+                                            directionMap[a][b + 1]--;
+                                            directionMap[a][b - 1]--;
                                             if (directionMap[a][b + 1] == 1)
                                             {
                                                 danger++;
@@ -701,10 +720,15 @@ namespace Roomba
                                         }
                                         else
                                         {
-                                            while (roadx.Count > roadCount)
+                                            do
                                             {
                                                 map[roadx.Pop()][roady.Pop()] = true;
-                                            }
+                                                if (roadx.Count == roadCount)
+                                                {
+                                                    break;
+                                                }
+                                            } while (true);
+                                            map[roadx.Pop()][roady.Pop()] = true;
                                         }
                                     }
                                 }
@@ -712,12 +736,19 @@ namespace Roomba
                                 {
                                     if (directionMap[a][b + 1] == 1)
                                     {
-                                        if (roadx.Count + 2 != restCount)
+                                        if (roadx.Count + 2 == restCount)
                                         {
-                                            prune = false;
+                                            map[a][b] = false;
+                                            roadx.Push(a);
+                                            roady.Push(b);
+                                            b++;
+                                            map[a][b] = false;
+                                            roadx.Push(a);
+                                            roady.Push(b);
+                                            return true;
                                         }
                                     }
-                                    if (prune)
+                                    else
                                     {
                                         map[a][b] = false;
                                         roadx.Push(a);
@@ -738,12 +769,19 @@ namespace Roomba
                                 {
                                     if (directionMap[a][b - 1] == 1)
                                     {
-                                        if (roadx.Count + 2 != restCount)
+                                        if (roadx.Count + 2 == restCount)
                                         {
-                                            prune = false;
+                                            map[a][b] = false;
+                                            roadx.Push(a);
+                                            roady.Push(b);
+                                            b++;
+                                            map[a][b] = false;
+                                            roadx.Push(a);
+                                            roady.Push(b);
+                                            return true;
                                         }
                                     }
-                                    if (prune)
+                                    else
                                     {
                                         map[a][b] = false;
                                         roadx.Push(a);
