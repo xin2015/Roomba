@@ -772,7 +772,7 @@ namespace Roomba
                                             map[a][b] = false;
                                             roadx.Push(a);
                                             roady.Push(b);
-                                            b++;
+                                            b--;
                                             map[a][b] = false;
                                             roadx.Push(a);
                                             roady.Push(b);
