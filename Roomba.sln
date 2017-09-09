@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Roomba", "Roomba\Roomba.csproj", "{A4FB3E73-D010-4509-968B-709795922467}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoombaService", "RoombaService\RoombaService.csproj", "{A0EF363D-9012-4FE3-AC57-050BA49F35DB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{A4FB3E73-D010-4509-968B-709795922467}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A4FB3E73-D010-4509-968B-709795922467}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A4FB3E73-D010-4509-968B-709795922467}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0EF363D-9012-4FE3-AC57-050BA49F35DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0EF363D-9012-4FE3-AC57-050BA49F35DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0EF363D-9012-4FE3-AC57-050BA49F35DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0EF363D-9012-4FE3-AC57-050BA49F35DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
