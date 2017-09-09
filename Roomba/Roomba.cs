@@ -299,7 +299,7 @@ namespace Roomba
                     roadCount = restore.Pop();
                     if (directionStack.Pop())
                     {
-                        while (roadx.Count > roadCount)
+                        while (roadx.Count != roadCount)
                         {
                             a = roadx.Pop();
                             b = roady.Pop();
@@ -316,7 +316,7 @@ namespace Roomba
                     }
                     else
                     {
-                        while (roadx.Count > roadCount)
+                        while (roadx.Count != roadCount)
                         {
                             a = roadx.Pop();
                             b = roady.Pop();
@@ -410,7 +410,7 @@ namespace Roomba
                                         } while (map[a][b]);
                                         do
                                         {
-                                            while (horizontalConnect.Count > 0)
+                                            do
                                             {
                                                 a = horizontalConnect.Pop();
                                                 move = horizontalConnect.Pop();
@@ -435,6 +435,7 @@ namespace Roomba
                                                     b--;
                                                 }
                                             }
+                                            while (horizontalConnect.Count > 0);
                                             while (verticalConnect.Count > 0)
                                             {
                                                 move = verticalConnect.Pop();
@@ -463,10 +464,11 @@ namespace Roomba
                                         } while (horizontalConnect.Count > 0);
                                         if (roadx.Count == restCount)
                                         {
-                                            while (roadx.Count > roadCount)
+                                            do
                                             {
                                                 map[roadx.Pop()][roady.Pop()] = true;
                                             }
+                                            while (roadx.Count != roadCount);
                                             moveStack.Push(1);
                                             directionStack.Push(false);
                                             moveStack.Push(-1);
@@ -489,11 +491,8 @@ namespace Roomba
                                             do
                                             {
                                                 map[roadx.Pop()][roady.Pop()] = true;
-                                                if (roadx.Count == roadCount)
-                                                {
-                                                    break;
-                                                }
-                                            } while (true);
+                                            }
+                                            while (roadx.Count != roadCount);
                                             map[roadx.Pop()][roady.Pop()] = true;
                                         }
                                     }
@@ -644,7 +643,7 @@ namespace Roomba
                                         } while (map[a][b]);
                                         do
                                         {
-                                            while (verticalConnect.Count > 0)
+                                            do
                                             {
                                                 move = verticalConnect.Pop();
                                                 b = verticalConnect.Pop();
@@ -669,6 +668,7 @@ namespace Roomba
                                                     a--;
                                                 }
                                             }
+                                            while (verticalConnect.Count > 0);
                                             while (horizontalConnect.Count > 0)
                                             {
                                                 a = horizontalConnect.Pop();
@@ -697,10 +697,11 @@ namespace Roomba
                                         } while (verticalConnect.Count > 0);
                                         if (roadx.Count == restCount)
                                         {
-                                            while (roadx.Count > roadCount)
+                                            do
                                             {
                                                 map[roadx.Pop()][roady.Pop()] = true;
                                             }
+                                            while (roadx.Count != roadCount);
                                             moveStack.Push(1);
                                             directionStack.Push(true);
                                             moveStack.Push(-1);
@@ -723,11 +724,8 @@ namespace Roomba
                                             do
                                             {
                                                 map[roadx.Pop()][roady.Pop()] = true;
-                                                if (roadx.Count == roadCount)
-                                                {
-                                                    break;
-                                                }
-                                            } while (true);
+                                            }
+                                            while (roadx.Count != roadCount);
                                             map[roadx.Pop()][roady.Pop()] = true;
                                         }
                                     }
