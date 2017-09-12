@@ -558,16 +558,19 @@ namespace Roomba
             int roadCount, wallCount;
             int move;
             bool prune = true;
-            int c, d;
-            if (directionMap[a][b] == 1)
+            if (danger > 1)
             {
-                danger--;
+                Console.WriteLine("Warning! danger is {0}", danger);
             }
             map[a][b] = false;
             roadx.Push(a);
             roady.Push(b);
-            if (danger == 0)
+            if (directionMap[a][b] == 1)
             {
+                danger--;
+                connect.Push(b);
+                connect.Push(a);
+                Connect(map, directionMap, wall, connect);
                 if (map[a - 1][b])
                 {
                     moveStack.Push(-1);
@@ -611,18 +614,134 @@ namespace Roomba
             }
             else
             {
+                if (a == 1)
+                {
+                    if (b == 1)
+                    {
+                        moveStack.Push(1);
+                        directionStack.Push(false);
+                        directionMap[2][1]--;
+                        if (directionMap[2][1] == 1)
+                        {
+                            danger++;
+                        }
+                        if (!map[2][2])
+                        {
+                            directionMap[2][2] = -1;
+                            wall.Push(2);
+                            wall.Push(2);
+                            connect.Push(2);
+                            connect.Push(2);
+                            Connect(map, directionMap, wall, connect);
+                        }
+                        moveStack.Push(1);
+                        directionStack.Push(true);
+                        directionMap[1][2]--;
+                        if (directionMap[1][2] == 1)
+                        {
+                            danger++;
+                        }
+                        if (directionMap[0][2] == 0)
+                        {
+                            connect.Push(1);
+                            connect.Push(1);
+                            Connect(map, directionMap, wall, connect);
+                        }
+                        else
+                        {
+                            prune = false;
+                        }
+                    }
+                    else if (b == y)
+                    {
+                        moveStack.Push(-1);
+                        directionStack.Push(true);
+                        directionMap[1][b - 1]--;
+                        if (!map[2][b - 1])
+                        {
+                            directionMap[2][b - 1] = -1;
+                            wall.Push(b - 1);
+                            wall.Push(2);
+                            connect.Push(b - 1);
+                            connect.Push(2);
+                            Connect(map, directionMap, wall, connect);
+                        }
+                        moveStack.Push(1);
+                        directionStack.Push(false);
+                        directionMap[2][b]--;
+                        if (directionMap[2][R] == 0)
+                        {
+                            connect.Push(R);
+                            connect.Push(2);
+                            Connect(map, directionMap, wall, connect);
+                        }
+                    }
+                    else
+                    {
+                        if (map[1][b - 1])
+                        {
+                            moveStack.Push(-1);
+                            directionStack.Push(true);
+                            directionMap[1][b - 1]--;
+                            if (!map[2][b - 1])
+                            {
+                                directionMap[2][b - 1] = -1;
+                                wall.Push(b - 1);
+                                wall.Push(2);
+                                connect.Push(b - 1);
+                                connect.Push(2);
+                                Connect(map, directionMap, wall, connect);
+                            }
+                        }
+                        if (map[2][b])
+                        {
+                            moveStack.Push(1);
+                            directionStack.Push(false);
+                            directionMap[2][b]--;
+                            if (!map[2][b + 1])
+                            {
+                                if (directionMap[2][b + 1] == 0)
+                                {
+                                    directionMap[2][b + 1] = -1;
+                                    wall.Push(b + 1);
+                                    wall.Push(2);
+                                    connect.Push(b + 1);
+                                    connect.Push(2);
+                                    Connect(map, directionMap, wall, connect);
+                                }
+                                else
+                                {
+                                    prune = false;
+                                }
+                            }
+                        }
+                        if (map[1][b + 1])
+                        {
+                            moveStack.Push(1);
+                            directionStack.Push(true);
+                            directionMap[2][b + 1]--;
+                            if (directionMap[0][b + 1] == 0)
+                            {
+                                con
+                            }
+                        }
+                    }
+                }
+            }
+            if (danger == 0)
+            {
                 if (map[a - 1][b])
                 {
                     moveStack.Push(-1);
                     directionStack.Push(false);
                     directionMap[a - 1][b]--;
-                    if (directionMap[a - 1][b] == 0)
-                    {
-                        prune = false;
-                    }
-                    else if (directionMap[a - 1][b] == 1)
+                    if (directionMap[a - 1][b] == 1)
                     {
                         danger++;
+                    }
+                    if (directionMap[a - 1][b + 1] == 0)
+                    {
+
                     }
                 }
                 if (map[a][b - 1])
@@ -630,11 +749,7 @@ namespace Roomba
                     moveStack.Push(-1);
                     directionStack.Push(true);
                     directionMap[a][b - 1]--;
-                    if (directionMap[a][b - 1] == 0)
-                    {
-                        prune = false;
-                    }
-                    else if (directionMap[a][b - 1] == 1)
+                    if (directionMap[a][b - 1] == 1)
                     {
                         danger++;
                     }
@@ -644,11 +759,7 @@ namespace Roomba
                     moveStack.Push(1);
                     directionStack.Push(false);
                     directionMap[a + 1][b]--;
-                    if (directionMap[a + 1][b] == 0)
-                    {
-                        prune = false;
-                    }
-                    else if (directionMap[a + 1][b] == 1)
+                    if (directionMap[a + 1][b] == 1)
                     {
                         danger++;
                     }
@@ -658,14 +769,64 @@ namespace Roomba
                     moveStack.Push(1);
                     directionStack.Push(true);
                     directionMap[a][b + 1]--;
-                    if (directionMap[a][b + 1] == 0)
-                    {
-                        prune = false;
-                    }
-                    else if (directionMap[a][b + 1] == 1)
+                    if (directionMap[a][b + 1] == 1)
                     {
                         danger++;
                     }
+                }
+            }
+            else
+            {
+                if (directionMap[a][b] == 1)
+                {
+                    danger--;
+                    connect.Push(b);
+                    connect.Push(a);
+                    Connect(map, directionMap, wall, connect);
+                    if (map[a - 1][b])
+                    {
+                        moveStack.Push(-1);
+                        directionStack.Push(false);
+                        directionMap[a - 1][b]--;
+                        if (directionMap[a - 1][b] == 1)
+                        {
+                            danger++;
+                        }
+                    }
+                    if (map[a][b - 1])
+                    {
+                        moveStack.Push(-1);
+                        directionStack.Push(true);
+                        directionMap[a][b - 1]--;
+                        if (directionMap[a][b - 1] == 1)
+                        {
+                            danger++;
+                        }
+                    }
+                    if (map[a + 1][b])
+                    {
+                        moveStack.Push(1);
+                        directionStack.Push(false);
+                        directionMap[a + 1][b]--;
+                        if (directionMap[a + 1][b] == 1)
+                        {
+                            danger++;
+                        }
+                    }
+                    if (map[a][b + 1])
+                    {
+                        moveStack.Push(1);
+                        directionStack.Push(true);
+                        directionMap[a][b + 1]--;
+                        if (directionMap[a][b + 1] == 1)
+                        {
+                            danger++;
+                        }
+                    }
+                }
+                else
+                {
+
                 }
             }
             if (prune)
