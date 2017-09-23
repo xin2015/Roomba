@@ -243,7 +243,7 @@ namespace Roomba
             Stack<int> wall = new Stack<int>();
             int roadCount, wallCount;
             int startx, starty, connectx, connecty;
-            int move;
+            int move, connectMove;
             bool direction;
             bool prune = true;
             map[a][b] = false;
@@ -256,84 +256,102 @@ namespace Roomba
                 starty = b;
                 connectx = a;
                 connecty = b;
-                move = 1;
+                connectMove = 1;
                 direction = true;
                 do
                 {
                     if (direction)
                     {
-                        if (directionMap[connectx - move][connecty] == 0)
+                        if (directionMap[connectx - connectMove][connecty] > 0)
                         {
-                            directionMap[connectx - move][connecty] = -1;
-                            wall.Push(connecty);
-                            wall.Push(connectx - move);
-                            if (directionMap[connectx][connecty + move] == 0)
-                            {
-                                directionMap[connectx][connecty + move] = -1;
-                                wall.Push(connecty + move);
-                                wall.Push(connectx);
-                                if (directionMap[connectx + move][connecty] == 0)
-                                {
-                                    directionMap[connectx + move][connecty] = -1;
-                                    wall.Push(connecty);
-                                    wall.Push(connectx + move);
-                                    move = -move;
-                                    connecty += move;
-                                }
-                                else
-                                {
-                                    direction = false;
-                                    connectx += move;
-                                }
-                            }
-                            else
-                            {
-                                connecty += move;
-                            }
+                            connectMove = -connectMove;
+                            direction = false;
+                            connectx += connectMove;
                         }
                         else
                         {
-                            move = -move;
-                            direction = false;
-                            connectx += move;
+                            if (directionMap[connectx - connectMove][connecty] == 0)
+                            {
+                                directionMap[connectx - connectMove][connecty] = -1;
+                                wall.Push(connecty);
+                                wall.Push(connectx - connectMove);
+                            }
+                            if (directionMap[connectx][connecty + connectMove] > 0)
+                            {
+                                connecty += connectMove;
+                            }
+                            else
+                            {
+                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                {
+                                    directionMap[connectx][connecty + connectMove] = -1;
+                                    wall.Push(connecty + connectMove);
+                                    wall.Push(connectx);
+                                }
+                                if (directionMap[connectx + connectMove][connecty] > 0)
+                                {
+                                    direction = false;
+                                    connectx += connectMove;
+                                }
+                                else
+                                {
+                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                    {
+                                        directionMap[connectx + connectMove][connecty] = -1;
+                                        wall.Push(connecty);
+                                        wall.Push(connectx + connectMove);
+                                    }
+                                    connectMove = -connectMove;
+                                    connecty += connectMove;
+                                }
+                            }
                         }
                     }
                     else
                     {
-                        if (directionMap[connectx][connecty + move] == 0)
+                        if (directionMap[connectx][connecty + connectMove] > 0)
                         {
-                            directionMap[connectx][connecty + move] = -1;
-                            wall.Push(connecty + move);
-                            wall.Push(connectx);
-                            if (directionMap[connectx + move][connecty] == 0)
-                            {
-                                directionMap[connectx + move][connecty] = -1;
-                                wall.Push(connecty);
-                                wall.Push(connectx + move);
-                                if (directionMap[connectx][connecty - move] == 0)
-                                {
-                                    directionMap[connectx][connecty - move] = -1;
-                                    wall.Push(connecty - move);
-                                    wall.Push(connectx);
-                                    move = -move;
-                                    connectx += move;
-                                }
-                                else
-                                {
-                                    move = -move;
-                                    direction = true;
-                                    connecty += move;
-                                }
-                            }
-                            else
-                            {
-                                connectx += move;
-                            }
+                            direction = true;
+                            connecty += connectMove;
                         }
                         else
                         {
-                            direction = true;
-                            connecty += move;
+                            if (directionMap[connectx][connecty + connectMove] == 0)
+                            {
+                                directionMap[connectx][connecty + connectMove] = -1;
+                                wall.Push(connecty + connectMove);
+                                wall.Push(connectx);
+                            }
+                            if (directionMap[connectx + connectMove][connecty] > 0)
+                            {
+                                connectx += connectMove;
+                            }
+                            else
+                            {
+                                if (directionMap[connectx + connectMove][connecty] == 0)
+                                {
+                                    directionMap[connectx + connectMove][connecty] = -1;
+                                    wall.Push(connecty);
+                                    wall.Push(connectx + connectMove);
+                                }
+                                if (directionMap[connectx][connecty - connectMove] > 0)
+                                {
+                                    connectMove = -connectMove;
+                                    direction = true;
+                                    connecty += connectMove;
+                                }
+                                else
+                                {
+                                    if (directionMap[connectx][connecty - connectMove] == 0)
+                                    {
+                                        directionMap[connectx][connecty - connectMove] = -1;
+                                        wall.Push(connecty - connectMove);
+                                        wall.Push(connectx);
+                                    }
+                                    connectMove = -connectMove;
+                                    connectx += connectMove;
+                                }
+                            }
                         }
                     }
                 } while (connectx != startx || connecty != starty);
@@ -342,7 +360,7 @@ namespace Roomba
                     moveStack.Push(-1);
                     directionStack.Push(false);
                     directionMap[a - 1][b]--;
-                    if (directionMap[a - 1][b] ==1)
+                    if (directionMap[a - 1][b] == 1)
                     {
                         danger++;
                     }
@@ -450,11 +468,11 @@ namespace Roomba
                         {
                             if (starty == b + 1)
                             {
-                                
+
                                 starty -= 1;
                                 connectx = startx;
                                 connecty = starty;
-                                move = 1;
+                                connectMove = 1;
                                 direction = false;
                             }
                             else
@@ -462,7 +480,7 @@ namespace Roomba
                                 startx -= 1;
                                 connectx = startx;
                                 connecty = starty;
-                                move = -1;
+                                connectMove = -1;
                                 direction = true;
                             }
                         }
@@ -473,7 +491,7 @@ namespace Roomba
                                 startx += 1;
                                 connectx = startx;
                                 connecty = starty;
-                                move = 1;
+                                connectMove = 1;
                                 direction = true;
                             }
                             else
@@ -481,7 +499,7 @@ namespace Roomba
                                 starty += 1;
                                 connectx = startx;
                                 connecty = starty;
-                                move = -1;
+                                connectMove = -1;
                                 direction = false;
                             }
                         }
@@ -489,78 +507,96 @@ namespace Roomba
                         {
                             if (direction)
                             {
-                                if (directionMap[connectx - move][connecty] == 0)
+                                if (directionMap[connectx - connectMove][connecty] > 0)
                                 {
-                                    directionMap[connectx - move][connecty] = -1;
-                                    wall.Push(connecty);
-                                    wall.Push(connectx - move);
-                                    if (directionMap[connectx][connecty + move] == 0)
-                                    {
-                                        directionMap[connectx][connecty + move] = -1;
-                                        wall.Push(connecty + move);
-                                        wall.Push(connectx);
-                                        if (directionMap[connectx + move][connecty] == 0)
-                                        {
-                                            directionMap[connectx + move][connecty] = -1;
-                                            wall.Push(connecty);
-                                            wall.Push(connectx + move);
-                                            move = -move;
-                                            connecty += move;
-                                        }
-                                        else
-                                        {
-                                            direction = false;
-                                            connectx += move;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        connecty += move;
-                                    }
+                                    connectMove = -connectMove;
+                                    direction = false;
+                                    connectx += connectMove;
                                 }
                                 else
                                 {
-                                    move = -move;
-                                    direction = false;
-                                    connectx += move;
+                                    if (directionMap[connectx - connectMove][connecty] == 0)
+                                    {
+                                        directionMap[connectx - connectMove][connecty] = -1;
+                                        wall.Push(connecty);
+                                        wall.Push(connectx - connectMove);
+                                    }
+                                    if (directionMap[connectx][connecty + connectMove] > 0)
+                                    {
+                                        connecty += connectMove;
+                                    }
+                                    else
+                                    {
+                                        if (directionMap[connectx][connecty + connectMove] == 0)
+                                        {
+                                            directionMap[connectx][connecty + connectMove] = -1;
+                                            wall.Push(connecty + connectMove);
+                                            wall.Push(connectx);
+                                        }
+                                        if (directionMap[connectx + connectMove][connecty] > 0)
+                                        {
+                                            direction = false;
+                                            connectx += connectMove;
+                                        }
+                                        else
+                                        {
+                                            if (directionMap[connectx + connectMove][connecty] == 0)
+                                            {
+                                                directionMap[connectx + connectMove][connecty] = -1;
+                                                wall.Push(connecty);
+                                                wall.Push(connectx + connectMove);
+                                            }
+                                            connectMove = -connectMove;
+                                            connecty += connectMove;
+                                        }
+                                    }
                                 }
                             }
                             else
                             {
-                                if (directionMap[connectx][connecty + move] == 0)
+                                if (directionMap[connectx][connecty + connectMove] > 0)
                                 {
-                                    directionMap[connectx][connecty + move] = -1;
-                                    wall.Push(connecty + move);
-                                    wall.Push(connectx);
-                                    if (directionMap[connectx + move][connecty] == 0)
-                                    {
-                                        directionMap[connectx + move][connecty] = -1;
-                                        wall.Push(connecty);
-                                        wall.Push(connectx + move);
-                                        if (directionMap[connectx][connecty - move] == 0)
-                                        {
-                                            directionMap[connectx][connecty - move] = -1;
-                                            wall.Push(connecty - move);
-                                            wall.Push(connectx);
-                                            move = -move;
-                                            connectx += move;
-                                        }
-                                        else
-                                        {
-                                            move = -move;
-                                            direction = true;
-                                            connecty += move;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        connectx += move;
-                                    }
+                                    direction = true;
+                                    connecty += connectMove;
                                 }
                                 else
                                 {
-                                    direction = true;
-                                    connecty += move;
+                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                    {
+                                        directionMap[connectx][connecty + connectMove] = -1;
+                                        wall.Push(connecty + connectMove);
+                                        wall.Push(connectx);
+                                    }
+                                    if (directionMap[connectx + connectMove][connecty] > 0)
+                                    {
+                                        connectx += connectMove;
+                                    }
+                                    else
+                                    {
+                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                        {
+                                            directionMap[connectx + connectMove][connecty] = -1;
+                                            wall.Push(connecty);
+                                            wall.Push(connectx + connectMove);
+                                        }
+                                        if (directionMap[connectx][connecty - connectMove] > 0)
+                                        {
+                                            connectMove = -connectMove;
+                                            direction = true;
+                                            connecty += connectMove;
+                                        }
+                                        else
+                                        {
+                                            if (directionMap[connectx][connecty - connectMove] == 0)
+                                            {
+                                                directionMap[connectx][connecty - connectMove] = -1;
+                                                wall.Push(connecty - connectMove);
+                                                wall.Push(connectx);
+                                            }
+                                            connectMove = -connectMove;
+                                            connectx += connectMove;
+                                        }
+                                    }
                                 }
                             }
                         } while (connectx != startx || connecty != starty);
@@ -573,22 +609,22 @@ namespace Roomba
                 };
                 if (prune)
                 {
-                    if (!map[a - 1][b])
+                    if (!map[a - 1][b] && directionMap[a - 1][b] == 0)
                     {
                         preConnect.Enqueue(a - 1);
                         preConnect.Enqueue(b);
                     }
-                    if (!map[a][b - 1])
+                    if (!map[a][b - 1] && directionMap[a][b - 1]==0)
                     {
                         preConnect.Enqueue(a);
                         preConnect.Enqueue(b - 1);
                     }
-                    if (!map[a + 1][b])
+                    if (!map[a + 1][b] && directionMap[a + 1][b]==0)
                     {
                         preConnect.Enqueue(a + 1);
                         preConnect.Enqueue(b);
                     }
-                    if (!map[a][b + 1])
+                    if (!map[a][b + 1] && directionMap[a][b + 1]==0)
                     {
                         preConnect.Enqueue(a);
                         preConnect.Enqueue(b + 1);
@@ -604,7 +640,7 @@ namespace Roomba
                                 starty = b;
                                 connectx = startx;
                                 connecty = starty;
-                                move = 1;
+                                connectMove = 1;
                                 direction = false;
                             }
                             else
@@ -612,7 +648,7 @@ namespace Roomba
                                 starty = b;
                                 connectx = startx;
                                 connecty = starty;
-                                move = -1;
+                                connectMove = -1;
                                 direction = false;
                             }
                         }
@@ -623,7 +659,7 @@ namespace Roomba
                                 startx = a;
                                 connectx = startx;
                                 connecty = starty;
-                                move = -1;
+                                connectMove = -1;
                                 direction = true;
                             }
                             else
@@ -631,7 +667,7 @@ namespace Roomba
                                 startx = a;
                                 connectx = startx;
                                 connecty = starty;
-                                move = 1;
+                                connectMove = 1;
                                 direction = true;
                             }
                         }
@@ -639,78 +675,96 @@ namespace Roomba
                         {
                             if (direction)
                             {
-                                if (directionMap[connectx - move][connecty] == 0)
+                                if (directionMap[connectx - connectMove][connecty] > 0)
                                 {
-                                    directionMap[connectx - move][connecty] = -1;
-                                    wall.Push(connecty);
-                                    wall.Push(connectx - move);
-                                    if (directionMap[connectx][connecty + move] == 0)
-                                    {
-                                        directionMap[connectx][connecty + move] = -1;
-                                        wall.Push(connecty + move);
-                                        wall.Push(connectx);
-                                        if (directionMap[connectx + move][connecty] == 0)
-                                        {
-                                            directionMap[connectx + move][connecty] = -1;
-                                            wall.Push(connecty);
-                                            wall.Push(connectx + move);
-                                            move = -move;
-                                            connecty += move;
-                                        }
-                                        else
-                                        {
-                                            direction = false;
-                                            connectx += move;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        connecty += move;
-                                    }
+                                    connectMove = -connectMove;
+                                    direction = false;
+                                    connectx += connectMove;
                                 }
                                 else
                                 {
-                                    move = -move;
-                                    direction = false;
-                                    connectx += move;
+                                    if (directionMap[connectx - connectMove][connecty] == 0)
+                                    {
+                                        directionMap[connectx - connectMove][connecty] = -1;
+                                        wall.Push(connecty);
+                                        wall.Push(connectx - connectMove);
+                                    }
+                                    if (directionMap[connectx][connecty + connectMove] > 0)
+                                    {
+                                        connecty += connectMove;
+                                    }
+                                    else
+                                    {
+                                        if (directionMap[connectx][connecty + connectMove] == 0)
+                                        {
+                                            directionMap[connectx][connecty + connectMove] = -1;
+                                            wall.Push(connecty + connectMove);
+                                            wall.Push(connectx);
+                                        }
+                                        if (directionMap[connectx + connectMove][connecty] > 0)
+                                        {
+                                            direction = false;
+                                            connectx += connectMove;
+                                        }
+                                        else
+                                        {
+                                            if (directionMap[connectx + connectMove][connecty] == 0)
+                                            {
+                                                directionMap[connectx + connectMove][connecty] = -1;
+                                                wall.Push(connecty);
+                                                wall.Push(connectx + connectMove);
+                                            }
+                                            connectMove = -connectMove;
+                                            connecty += connectMove;
+                                        }
+                                    }
                                 }
                             }
                             else
                             {
-                                if (directionMap[connectx][connecty + move] == 0)
+                                if (directionMap[connectx][connecty + connectMove] > 0)
                                 {
-                                    directionMap[connectx][connecty + move] = -1;
-                                    wall.Push(connecty + move);
-                                    wall.Push(connectx);
-                                    if (directionMap[connectx + move][connecty] == 0)
-                                    {
-                                        directionMap[connectx + move][connecty] = -1;
-                                        wall.Push(connecty);
-                                        wall.Push(connectx + move);
-                                        if (directionMap[connectx][connecty - move] == 0)
-                                        {
-                                            directionMap[connectx][connecty - move] = -1;
-                                            wall.Push(connecty - move);
-                                            wall.Push(connectx);
-                                            move = -move;
-                                            connectx += move;
-                                        }
-                                        else
-                                        {
-                                            move = -move;
-                                            direction = true;
-                                            connecty += move;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        connectx += move;
-                                    }
+                                    direction = true;
+                                    connecty += connectMove;
                                 }
                                 else
                                 {
-                                    direction = true;
-                                    connecty += move;
+                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                    {
+                                        directionMap[connectx][connecty + connectMove] = -1;
+                                        wall.Push(connecty + connectMove);
+                                        wall.Push(connectx);
+                                    }
+                                    if (directionMap[connectx + connectMove][connecty] > 0)
+                                    {
+                                        connectx += connectMove;
+                                    }
+                                    else
+                                    {
+                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                        {
+                                            directionMap[connectx + connectMove][connecty] = -1;
+                                            wall.Push(connecty);
+                                            wall.Push(connectx + connectMove);
+                                        }
+                                        if (directionMap[connectx][connecty - connectMove] > 0)
+                                        {
+                                            connectMove = -connectMove;
+                                            direction = true;
+                                            connecty += connectMove;
+                                        }
+                                        else
+                                        {
+                                            if (directionMap[connectx][connecty - connectMove] == 0)
+                                            {
+                                                directionMap[connectx][connecty - connectMove] = -1;
+                                                wall.Push(connecty - connectMove);
+                                                wall.Push(connectx);
+                                            }
+                                            connectMove = -connectMove;
+                                            connectx += connectMove;
+                                        }
+                                    }
                                 }
                             }
                         } while (connectx != startx || connecty != starty);
@@ -775,6 +829,7 @@ namespace Roomba
                         restore.Push(wall.Count);
                         restore.Push(danger);
                         prune = true;
+                        preConnect.Clear();
                         if (directionStack.Peek())
                         {
                             b += move;
@@ -850,83 +905,102 @@ namespace Roomba
                                                     starty -= move;
                                                     connectx = startx;
                                                     connecty = starty;
+                                                    connectMove = move;
                                                     direction = false;
                                                     do
                                                     {
                                                         if (direction)
                                                         {
-                                                            if (directionMap[connectx - move][connecty] == 0)
+                                                            if (directionMap[connectx - connectMove][connecty] > 0)
                                                             {
-                                                                directionMap[connectx - move][connecty] = -1;
-                                                                wall.Push(connecty);
-                                                                wall.Push(connectx - move);
-                                                                if (directionMap[connectx][connecty + move] == 0)
-                                                                {
-                                                                    directionMap[connectx][connecty + move] = -1;
-                                                                    wall.Push(connecty + move);
-                                                                    wall.Push(connectx);
-                                                                    if (directionMap[connectx + move][connecty] == 0)
-                                                                    {
-                                                                        directionMap[connectx + move][connecty] = -1;
-                                                                        wall.Push(connecty);
-                                                                        wall.Push(connectx + move);
-                                                                        move = -move;
-                                                                        connecty += move;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        direction = false;
-                                                                        connectx += move;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    connecty += move;
-                                                                }
+                                                                connectMove = -connectMove;
+                                                                direction = false;
+                                                                connectx += connectMove;
                                                             }
                                                             else
                                                             {
-                                                                move = -move;
-                                                                direction = false;
-                                                                connectx += move;
+                                                                if (directionMap[connectx - connectMove][connecty] == 0)
+                                                                {
+                                                                    directionMap[connectx - connectMove][connecty] = -1;
+                                                                    wall.Push(connecty);
+                                                                    wall.Push(connectx - connectMove);
+                                                                }
+                                                                if (directionMap[connectx][connecty + connectMove] > 0)
+                                                                {
+                                                                    connecty += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                    {
+                                                                        directionMap[connectx][connecty + connectMove] = -1;
+                                                                        wall.Push(connecty + connectMove);
+                                                                        wall.Push(connectx);
+                                                                    }
+                                                                    if (directionMap[connectx + connectMove][connecty] > 0)
+                                                                    {
+                                                                        direction = false;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                        {
+                                                                            directionMap[connectx + connectMove][connecty] = -1;
+                                                                            wall.Push(connecty);
+                                                                            wall.Push(connectx + connectMove);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                         else
                                                         {
-                                                            if (directionMap[connectx][connecty + move] == 0)
+                                                            if (directionMap[connectx][connecty + connectMove] > 0)
                                                             {
-                                                                directionMap[connectx][connecty + move] = -1;
-                                                                wall.Push(connecty + move);
-                                                                wall.Push(connectx);
-                                                                if (directionMap[connectx + move][connecty] == 0)
-                                                                {
-                                                                    directionMap[connectx + move][connecty] = -1;
-                                                                    wall.Push(connecty);
-                                                                    wall.Push(connectx + move);
-                                                                    if (directionMap[connectx][connecty - move] == 0)
-                                                                    {
-                                                                        directionMap[connectx][connecty - move] = -1;
-                                                                        wall.Push(connecty - move);
-                                                                        wall.Push(connectx);
-                                                                        move = -move;
-                                                                        connectx += move;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        move = -move;
-                                                                        direction = true;
-                                                                        connecty += move;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    connectx += move;
-                                                                }
+                                                                direction = true;
+                                                                connecty += connectMove;
                                                             }
                                                             else
                                                             {
-                                                                direction = true;
-                                                                connecty += move;
+                                                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                {
+                                                                    directionMap[connectx][connecty + connectMove] = -1;
+                                                                    wall.Push(connecty + connectMove);
+                                                                    wall.Push(connectx);
+                                                                }
+                                                                if (directionMap[connectx + connectMove][connecty] > 0)
+                                                                {
+                                                                    connectx += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                    {
+                                                                        directionMap[connectx + connectMove][connecty] = -1;
+                                                                        wall.Push(connecty);
+                                                                        wall.Push(connectx + connectMove);
+                                                                    }
+                                                                    if (directionMap[connectx][connecty - connectMove] > 0)
+                                                                    {
+                                                                        connectMove = -connectMove;
+                                                                        direction = true;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx][connecty - connectMove] == 0)
+                                                                        {
+                                                                            directionMap[connectx][connecty - connectMove] = -1;
+                                                                            wall.Push(connecty - connectMove);
+                                                                            wall.Push(connectx);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     } while (connectx != startx || connecty != starty);
@@ -986,83 +1060,102 @@ namespace Roomba
                                                     starty -= move;
                                                     connectx = startx;
                                                     connecty = starty;
+                                                    connectMove = move;
                                                     direction = false;
                                                     do
                                                     {
                                                         if (direction)
                                                         {
-                                                            if (directionMap[connectx - move][connecty] == 0)
+                                                            if (directionMap[connectx - connectMove][connecty] > 0)
                                                             {
-                                                                directionMap[connectx - move][connecty] = -1;
-                                                                wall.Push(connecty);
-                                                                wall.Push(connectx - move);
-                                                                if (directionMap[connectx][connecty + move] == 0)
-                                                                {
-                                                                    directionMap[connectx][connecty + move] = -1;
-                                                                    wall.Push(connecty + move);
-                                                                    wall.Push(connectx);
-                                                                    if (directionMap[connectx + move][connecty] == 0)
-                                                                    {
-                                                                        directionMap[connectx + move][connecty] = -1;
-                                                                        wall.Push(connecty);
-                                                                        wall.Push(connectx + move);
-                                                                        move = -move;
-                                                                        connecty += move;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        direction = false;
-                                                                        connectx += move;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    connecty += move;
-                                                                }
+                                                                connectMove = -connectMove;
+                                                                direction = false;
+                                                                connectx += connectMove;
                                                             }
                                                             else
                                                             {
-                                                                move = -move;
-                                                                direction = false;
-                                                                connectx += move;
+                                                                if (directionMap[connectx - connectMove][connecty] == 0)
+                                                                {
+                                                                    directionMap[connectx - connectMove][connecty] = -1;
+                                                                    wall.Push(connecty);
+                                                                    wall.Push(connectx - connectMove);
+                                                                }
+                                                                if (directionMap[connectx][connecty + connectMove] > 0)
+                                                                {
+                                                                    connecty += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                    {
+                                                                        directionMap[connectx][connecty + connectMove] = -1;
+                                                                        wall.Push(connecty + connectMove);
+                                                                        wall.Push(connectx);
+                                                                    }
+                                                                    if (directionMap[connectx + connectMove][connecty] > 0)
+                                                                    {
+                                                                        direction = false;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                        {
+                                                                            directionMap[connectx + connectMove][connecty] = -1;
+                                                                            wall.Push(connecty);
+                                                                            wall.Push(connectx + connectMove);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                         else
                                                         {
-                                                            if (directionMap[connectx][connecty + move] == 0)
+                                                            if (directionMap[connectx][connecty + connectMove] > 0)
                                                             {
-                                                                directionMap[connectx][connecty + move] = -1;
-                                                                wall.Push(connecty + move);
-                                                                wall.Push(connectx);
-                                                                if (directionMap[connectx + move][connecty] == 0)
-                                                                {
-                                                                    directionMap[connectx + move][connecty] = -1;
-                                                                    wall.Push(connecty);
-                                                                    wall.Push(connectx + move);
-                                                                    if (directionMap[connectx][connecty - move] == 0)
-                                                                    {
-                                                                        directionMap[connectx][connecty - move] = -1;
-                                                                        wall.Push(connecty - move);
-                                                                        wall.Push(connectx);
-                                                                        move = -move;
-                                                                        connectx += move;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        move = -move;
-                                                                        direction = true;
-                                                                        connecty += move;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    connectx += move;
-                                                                }
+                                                                direction = true;
+                                                                connecty += connectMove;
                                                             }
                                                             else
                                                             {
-                                                                direction = true;
-                                                                connecty += move;
+                                                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                {
+                                                                    directionMap[connectx][connecty + connectMove] = -1;
+                                                                    wall.Push(connecty + connectMove);
+                                                                    wall.Push(connectx);
+                                                                }
+                                                                if (directionMap[connectx + connectMove][connecty] > 0)
+                                                                {
+                                                                    connectx += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                    {
+                                                                        directionMap[connectx + connectMove][connecty] = -1;
+                                                                        wall.Push(connecty);
+                                                                        wall.Push(connectx + connectMove);
+                                                                    }
+                                                                    if (directionMap[connectx][connecty - connectMove] > 0)
+                                                                    {
+                                                                        connectMove = -connectMove;
+                                                                        direction = true;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx][connecty - connectMove] == 0)
+                                                                        {
+                                                                            directionMap[connectx][connecty - connectMove] = -1;
+                                                                            wall.Push(connecty - connectMove);
+                                                                            wall.Push(connectx);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     } while (connectx != startx || connecty != starty);
@@ -1118,83 +1211,102 @@ namespace Roomba
                                                     starty -= move;
                                                     connectx = startx;
                                                     connecty = starty;
+                                                    connectMove = move;
                                                     direction = false;
                                                     do
                                                     {
                                                         if (direction)
                                                         {
-                                                            if (directionMap[connectx - move][connecty] == 0)
+                                                            if (directionMap[connectx - connectMove][connecty] > 0)
                                                             {
-                                                                directionMap[connectx - move][connecty] = -1;
-                                                                wall.Push(connecty);
-                                                                wall.Push(connectx - move);
-                                                                if (directionMap[connectx][connecty + move] == 0)
-                                                                {
-                                                                    directionMap[connectx][connecty + move] = -1;
-                                                                    wall.Push(connecty + move);
-                                                                    wall.Push(connectx);
-                                                                    if (directionMap[connectx + move][connecty] == 0)
-                                                                    {
-                                                                        directionMap[connectx + move][connecty] = -1;
-                                                                        wall.Push(connecty);
-                                                                        wall.Push(connectx + move);
-                                                                        move = -move;
-                                                                        connecty += move;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        direction = false;
-                                                                        connectx += move;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    connecty += move;
-                                                                }
+                                                                connectMove = -connectMove;
+                                                                direction = false;
+                                                                connectx += connectMove;
                                                             }
                                                             else
                                                             {
-                                                                move = -move;
-                                                                direction = false;
-                                                                connectx += move;
+                                                                if (directionMap[connectx - connectMove][connecty] == 0)
+                                                                {
+                                                                    directionMap[connectx - connectMove][connecty] = -1;
+                                                                    wall.Push(connecty);
+                                                                    wall.Push(connectx - connectMove);
+                                                                }
+                                                                if (directionMap[connectx][connecty + connectMove] > 0)
+                                                                {
+                                                                    connecty += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                    {
+                                                                        directionMap[connectx][connecty + connectMove] = -1;
+                                                                        wall.Push(connecty + connectMove);
+                                                                        wall.Push(connectx);
+                                                                    }
+                                                                    if (directionMap[connectx + connectMove][connecty] > 0)
+                                                                    {
+                                                                        direction = false;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                        {
+                                                                            directionMap[connectx + connectMove][connecty] = -1;
+                                                                            wall.Push(connecty);
+                                                                            wall.Push(connectx + connectMove);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                         else
                                                         {
-                                                            if (directionMap[connectx][connecty + move] == 0)
+                                                            if (directionMap[connectx][connecty + connectMove] > 0)
                                                             {
-                                                                directionMap[connectx][connecty + move] = -1;
-                                                                wall.Push(connecty + move);
-                                                                wall.Push(connectx);
-                                                                if (directionMap[connectx + move][connecty] == 0)
-                                                                {
-                                                                    directionMap[connectx + move][connecty] = -1;
-                                                                    wall.Push(connecty);
-                                                                    wall.Push(connectx + move);
-                                                                    if (directionMap[connectx][connecty - move] == 0)
-                                                                    {
-                                                                        directionMap[connectx][connecty - move] = -1;
-                                                                        wall.Push(connecty - move);
-                                                                        wall.Push(connectx);
-                                                                        move = -move;
-                                                                        connectx += move;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        move = -move;
-                                                                        direction = true;
-                                                                        connecty += move;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    connectx += move;
-                                                                }
+                                                                direction = true;
+                                                                connecty += connectMove;
                                                             }
                                                             else
                                                             {
-                                                                direction = true;
-                                                                connecty += move;
+                                                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                {
+                                                                    directionMap[connectx][connecty + connectMove] = -1;
+                                                                    wall.Push(connecty + connectMove);
+                                                                    wall.Push(connectx);
+                                                                }
+                                                                if (directionMap[connectx + connectMove][connecty] > 0)
+                                                                {
+                                                                    connectx += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                    {
+                                                                        directionMap[connectx + connectMove][connecty] = -1;
+                                                                        wall.Push(connecty);
+                                                                        wall.Push(connectx + connectMove);
+                                                                    }
+                                                                    if (directionMap[connectx][connecty - connectMove] > 0)
+                                                                    {
+                                                                        connectMove = -connectMove;
+                                                                        direction = true;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx][connecty - connectMove] == 0)
+                                                                        {
+                                                                            directionMap[connectx][connecty - connectMove] = -1;
+                                                                            wall.Push(connecty - connectMove);
+                                                                            wall.Push(connectx);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     } while (connectx != startx || connecty != starty);
@@ -1308,84 +1420,102 @@ namespace Roomba
                                                     startx -= move;
                                                     connectx = startx;
                                                     connecty = starty;
-                                                    move = -move;
+                                                    connectMove = -move;
                                                     direction = true;
                                                     do
                                                     {
                                                         if (direction)
                                                         {
-                                                            if (directionMap[connectx - move][connecty] == 0)
+                                                            if (directionMap[connectx - connectMove][connecty] > 0)
                                                             {
-                                                                directionMap[connectx - move][connecty] = -1;
-                                                                wall.Push(connecty);
-                                                                wall.Push(connectx - move);
-                                                                if (directionMap[connectx][connecty + move] == 0)
-                                                                {
-                                                                    directionMap[connectx][connecty + move] = -1;
-                                                                    wall.Push(connecty + move);
-                                                                    wall.Push(connectx);
-                                                                    if (directionMap[connectx + move][connecty] == 0)
-                                                                    {
-                                                                        directionMap[connectx + move][connecty] = -1;
-                                                                        wall.Push(connecty);
-                                                                        wall.Push(connectx + move);
-                                                                        move = -move;
-                                                                        connecty += move;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        direction = false;
-                                                                        connectx += move;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    connecty += move;
-                                                                }
+                                                                connectMove = -connectMove;
+                                                                direction = false;
+                                                                connectx += connectMove;
                                                             }
                                                             else
                                                             {
-                                                                move = -move;
-                                                                direction = false;
-                                                                connectx += move;
+                                                                if (directionMap[connectx - connectMove][connecty] == 0)
+                                                                {
+                                                                    directionMap[connectx - connectMove][connecty] = -1;
+                                                                    wall.Push(connecty);
+                                                                    wall.Push(connectx - connectMove);
+                                                                }
+                                                                if (directionMap[connectx][connecty + connectMove] > 0)
+                                                                {
+                                                                    connecty += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                    {
+                                                                        directionMap[connectx][connecty + connectMove] = -1;
+                                                                        wall.Push(connecty + connectMove);
+                                                                        wall.Push(connectx);
+                                                                    }
+                                                                    if (directionMap[connectx + connectMove][connecty] > 0)
+                                                                    {
+                                                                        direction = false;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                        {
+                                                                            directionMap[connectx + connectMove][connecty] = -1;
+                                                                            wall.Push(connecty);
+                                                                            wall.Push(connectx + connectMove);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                         else
                                                         {
-                                                            if (directionMap[connectx][connecty + move] == 0)
+                                                            if (directionMap[connectx][connecty + connectMove] > 0)
                                                             {
-                                                                directionMap[connectx][connecty + move] = -1;
-                                                                wall.Push(connecty + move);
-                                                                wall.Push(connectx);
-                                                                if (directionMap[connectx + move][connecty] == 0)
-                                                                {
-                                                                    directionMap[connectx + move][connecty] = -1;
-                                                                    wall.Push(connecty);
-                                                                    wall.Push(connectx + move);
-                                                                    if (directionMap[connectx][connecty - move] == 0)
-                                                                    {
-                                                                        directionMap[connectx][connecty - move] = -1;
-                                                                        wall.Push(connecty - move);
-                                                                        wall.Push(connectx);
-                                                                        move = -move;
-                                                                        connectx += move;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        move = -move;
-                                                                        direction = true;
-                                                                        connecty += move;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    connectx += move;
-                                                                }
+                                                                direction = true;
+                                                                connecty += connectMove;
                                                             }
                                                             else
                                                             {
-                                                                direction = true;
-                                                                connecty += move;
+                                                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                {
+                                                                    directionMap[connectx][connecty + connectMove] = -1;
+                                                                    wall.Push(connecty + connectMove);
+                                                                    wall.Push(connectx);
+                                                                }
+                                                                if (directionMap[connectx + connectMove][connecty] > 0)
+                                                                {
+                                                                    connectx += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                    {
+                                                                        directionMap[connectx + connectMove][connecty] = -1;
+                                                                        wall.Push(connecty);
+                                                                        wall.Push(connectx + connectMove);
+                                                                    }
+                                                                    if (directionMap[connectx][connecty - connectMove] > 0)
+                                                                    {
+                                                                        connectMove = -connectMove;
+                                                                        direction = true;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx][connecty - connectMove] == 0)
+                                                                        {
+                                                                            directionMap[connectx][connecty - connectMove] = -1;
+                                                                            wall.Push(connecty - connectMove);
+                                                                            wall.Push(connectx);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     } while (connectx != startx || connecty != starty);
@@ -1445,83 +1575,102 @@ namespace Roomba
                                                     startx -= move;
                                                     connectx = startx;
                                                     connecty = starty;
+                                                    connectMove = -move;
                                                     direction = true;
                                                     do
                                                     {
                                                         if (direction)
                                                         {
-                                                            if (directionMap[connectx - move][connecty] == 0)
+                                                            if (directionMap[connectx - connectMove][connecty] > 0)
                                                             {
-                                                                directionMap[connectx - move][connecty] = -1;
-                                                                wall.Push(connecty);
-                                                                wall.Push(connectx - move);
-                                                                if (directionMap[connectx][connecty + move] == 0)
-                                                                {
-                                                                    directionMap[connectx][connecty + move] = -1;
-                                                                    wall.Push(connecty + move);
-                                                                    wall.Push(connectx);
-                                                                    if (directionMap[connectx + move][connecty] == 0)
-                                                                    {
-                                                                        directionMap[connectx + move][connecty] = -1;
-                                                                        wall.Push(connecty);
-                                                                        wall.Push(connectx + move);
-                                                                        move = -move;
-                                                                        connecty += move;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        direction = false;
-                                                                        connectx += move;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    connecty += move;
-                                                                }
+                                                                connectMove = -connectMove;
+                                                                direction = false;
+                                                                connectx += connectMove;
                                                             }
                                                             else
                                                             {
-                                                                move = -move;
-                                                                direction = false;
-                                                                connectx += move;
+                                                                if (directionMap[connectx - connectMove][connecty] == 0)
+                                                                {
+                                                                    directionMap[connectx - connectMove][connecty] = -1;
+                                                                    wall.Push(connecty);
+                                                                    wall.Push(connectx - connectMove);
+                                                                }
+                                                                if (directionMap[connectx][connecty + connectMove] > 0)
+                                                                {
+                                                                    connecty += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                    {
+                                                                        directionMap[connectx][connecty + connectMove] = -1;
+                                                                        wall.Push(connecty + connectMove);
+                                                                        wall.Push(connectx);
+                                                                    }
+                                                                    if (directionMap[connectx + connectMove][connecty] > 0)
+                                                                    {
+                                                                        direction = false;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                        {
+                                                                            directionMap[connectx + connectMove][connecty] = -1;
+                                                                            wall.Push(connecty);
+                                                                            wall.Push(connectx + connectMove);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                         else
                                                         {
-                                                            if (directionMap[connectx][connecty + move] == 0)
+                                                            if (directionMap[connectx][connecty + connectMove] > 0)
                                                             {
-                                                                directionMap[connectx][connecty + move] = -1;
-                                                                wall.Push(connecty + move);
-                                                                wall.Push(connectx);
-                                                                if (directionMap[connectx + move][connecty] == 0)
-                                                                {
-                                                                    directionMap[connectx + move][connecty] = -1;
-                                                                    wall.Push(connecty);
-                                                                    wall.Push(connectx + move);
-                                                                    if (directionMap[connectx][connecty - move] == 0)
-                                                                    {
-                                                                        directionMap[connectx][connecty - move] = -1;
-                                                                        wall.Push(connecty - move);
-                                                                        wall.Push(connectx);
-                                                                        move = -move;
-                                                                        connectx += move;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        move = -move;
-                                                                        direction = true;
-                                                                        connecty += move;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    connectx += move;
-                                                                }
+                                                                direction = true;
+                                                                connecty += connectMove;
                                                             }
                                                             else
                                                             {
-                                                                direction = true;
-                                                                connecty += move;
+                                                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                {
+                                                                    directionMap[connectx][connecty + connectMove] = -1;
+                                                                    wall.Push(connecty + connectMove);
+                                                                    wall.Push(connectx);
+                                                                }
+                                                                if (directionMap[connectx + connectMove][connecty] > 0)
+                                                                {
+                                                                    connectx += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                    {
+                                                                        directionMap[connectx + connectMove][connecty] = -1;
+                                                                        wall.Push(connecty);
+                                                                        wall.Push(connectx + connectMove);
+                                                                    }
+                                                                    if (directionMap[connectx][connecty - connectMove] > 0)
+                                                                    {
+                                                                        connectMove = -connectMove;
+                                                                        direction = true;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx][connecty - connectMove] == 0)
+                                                                        {
+                                                                            directionMap[connectx][connecty - connectMove] = -1;
+                                                                            wall.Push(connecty - connectMove);
+                                                                            wall.Push(connectx);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     } while (connectx != startx || connecty != starty);
@@ -1577,83 +1726,102 @@ namespace Roomba
                                                     startx -= move;
                                                     connectx = startx;
                                                     connecty = starty;
+                                                    connectMove = -move;
                                                     direction = true;
                                                     do
                                                     {
                                                         if (direction)
                                                         {
-                                                            if (directionMap[connectx - move][connecty] == 0)
+                                                            if (directionMap[connectx - connectMove][connecty] > 0)
                                                             {
-                                                                directionMap[connectx - move][connecty] = -1;
-                                                                wall.Push(connecty);
-                                                                wall.Push(connectx - move);
-                                                                if (directionMap[connectx][connecty + move] == 0)
-                                                                {
-                                                                    directionMap[connectx][connecty + move] = -1;
-                                                                    wall.Push(connecty + move);
-                                                                    wall.Push(connectx);
-                                                                    if (directionMap[connectx + move][connecty] == 0)
-                                                                    {
-                                                                        directionMap[connectx + move][connecty] = -1;
-                                                                        wall.Push(connecty);
-                                                                        wall.Push(connectx + move);
-                                                                        move = -move;
-                                                                        connecty += move;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        direction = false;
-                                                                        connectx += move;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    connecty += move;
-                                                                }
+                                                                connectMove = -connectMove;
+                                                                direction = false;
+                                                                connectx += connectMove;
                                                             }
                                                             else
                                                             {
-                                                                move = -move;
-                                                                direction = false;
-                                                                connectx += move;
+                                                                if (directionMap[connectx - connectMove][connecty] == 0)
+                                                                {
+                                                                    directionMap[connectx - connectMove][connecty] = -1;
+                                                                    wall.Push(connecty);
+                                                                    wall.Push(connectx - connectMove);
+                                                                }
+                                                                if (directionMap[connectx][connecty + connectMove] > 0)
+                                                                {
+                                                                    connecty += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                    {
+                                                                        directionMap[connectx][connecty + connectMove] = -1;
+                                                                        wall.Push(connecty + connectMove);
+                                                                        wall.Push(connectx);
+                                                                    }
+                                                                    if (directionMap[connectx + connectMove][connecty] > 0)
+                                                                    {
+                                                                        direction = false;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                        {
+                                                                            directionMap[connectx + connectMove][connecty] = -1;
+                                                                            wall.Push(connecty);
+                                                                            wall.Push(connectx + connectMove);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                         else
                                                         {
-                                                            if (directionMap[connectx][connecty + move] == 0)
+                                                            if (directionMap[connectx][connecty + connectMove] > 0)
                                                             {
-                                                                directionMap[connectx][connecty + move] = -1;
-                                                                wall.Push(connecty + move);
-                                                                wall.Push(connectx);
-                                                                if (directionMap[connectx + move][connecty] == 0)
-                                                                {
-                                                                    directionMap[connectx + move][connecty] = -1;
-                                                                    wall.Push(connecty);
-                                                                    wall.Push(connectx + move);
-                                                                    if (directionMap[connectx][connecty - move] == 0)
-                                                                    {
-                                                                        directionMap[connectx][connecty - move] = -1;
-                                                                        wall.Push(connecty - move);
-                                                                        wall.Push(connectx);
-                                                                        move = -move;
-                                                                        connectx += move;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        move = -move;
-                                                                        direction = true;
-                                                                        connecty += move;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    connectx += move;
-                                                                }
+                                                                direction = true;
+                                                                connecty += connectMove;
                                                             }
                                                             else
                                                             {
-                                                                direction = true;
-                                                                connecty += move;
+                                                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                {
+                                                                    directionMap[connectx][connecty + connectMove] = -1;
+                                                                    wall.Push(connecty + connectMove);
+                                                                    wall.Push(connectx);
+                                                                }
+                                                                if (directionMap[connectx + connectMove][connecty] > 0)
+                                                                {
+                                                                    connectx += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                    {
+                                                                        directionMap[connectx + connectMove][connecty] = -1;
+                                                                        wall.Push(connecty);
+                                                                        wall.Push(connectx + connectMove);
+                                                                    }
+                                                                    if (directionMap[connectx][connecty - connectMove] > 0)
+                                                                    {
+                                                                        connectMove = -connectMove;
+                                                                        direction = true;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx][connecty - connectMove] == 0)
+                                                                        {
+                                                                            directionMap[connectx][connecty - connectMove] = -1;
+                                                                            wall.Push(connecty - connectMove);
+                                                                            wall.Push(connectx);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     } while (connectx != startx || connecty != starty);
