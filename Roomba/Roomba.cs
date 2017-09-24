@@ -239,568 +239,1623 @@ namespace Roomba
             Stack<int> moveStack = new Stack<int>();
             Stack<bool> directionStack = new Stack<bool>();
             Stack<int> restore = new Stack<int>();
-            Stack<int> horizontalConnect = new Stack<int>(), verticalConnect = new Stack<int>();
-            int roadCount;
-            int move;
-            bool prune;
-            if (directionMap[a][b] == 1)
-            {
-                danger--;
-            }
+            Queue<int> preConnect = new Queue<int>();
+            Stack<int> wall = new Stack<int>();
+            int roadCount, wallCount;
+            int startx, starty, connectx, connecty;
+            int move, connectMove;
+            bool direction;
+            bool prune = true;
             map[a][b] = false;
             roadx.Push(a);
             roady.Push(b);
-            if (map[a - 1][b])
+            if (directionMap[a][b] == 1)
             {
-                moveStack.Push(-1);
-                directionStack.Push(false);
-                directionMap[a - 1][b]--;
-                if (directionMap[a - 1][b] < 2)
+                danger--;
+                startx = a;
+                starty = b;
+                connectx = a;
+                connecty = b;
+                connectMove = 1;
+                direction = true;
+                do
                 {
-                    danger++;
-                }
-            }
-            if (map[a][b - 1])
-            {
-                moveStack.Push(-1);
-                directionStack.Push(true);
-                directionMap[a][b - 1]--;
-                if (directionMap[a][b - 1] < 2)
-                {
-                    danger++;
-                }
-            }
-            if (map[a + 1][b])
-            {
-                moveStack.Push(1);
-                directionStack.Push(false);
-                directionMap[a + 1][b]--;
-                if (directionMap[a + 1][b] < 2)
-                {
-                    danger++;
-                }
-            }
-            if (map[a][b + 1])
-            {
-                moveStack.Push(1);
-                directionStack.Push(true);
-                directionMap[a][b + 1]--;
-                if (directionMap[a][b + 1] < 2)
-                {
-                    danger++;
-                }
-            }
-            while (moveStack.Count > 0)
-            {
-                move = moveStack.Pop();
-                if (move == 0)
-                {
-                    danger = restore.Pop();
-                    roadCount = restore.Pop();
-                    if (directionStack.Pop())
+                    if (direction)
                     {
-                        while (roadx.Count != roadCount)
+                        if (_map[connectx - connectMove][connecty])
                         {
-                            a = roadx.Pop();
-                            b = roady.Pop();
-                            map[a][b] = true;
-                            if (map[a + 1][b])
+                            connectMove = -connectMove;
+                            direction = false;
+                            connectx += connectMove;
+                        }
+                        else
+                        {
+                            if (directionMap[connectx - connectMove][connecty] == 0)
                             {
-                                directionMap[a + 1][b]++;
+                                directionMap[connectx - connectMove][connecty] = -1;
+                                wall.Push(connecty);
+                                wall.Push(connectx - connectMove);
                             }
-                            if (map[a - 1][b])
+                            if (_map[connectx][connecty + connectMove])
                             {
-                                directionMap[a - 1][b]++;
+                                connecty += connectMove;
+                            }
+                            else
+                            {
+                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                {
+                                    directionMap[connectx][connecty + connectMove] = -1;
+                                    wall.Push(connecty + connectMove);
+                                    wall.Push(connectx);
+                                }
+                                if (_map[connectx + connectMove][connecty])
+                                {
+                                    direction = false;
+                                    connectx += connectMove;
+                                }
+                                else
+                                {
+                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                    {
+                                        directionMap[connectx + connectMove][connecty] = -1;
+                                        wall.Push(connecty);
+                                        wall.Push(connectx + connectMove);
+                                    }
+                                    connectMove = -connectMove;
+                                    connecty += connectMove;
+                                }
                             }
                         }
                     }
                     else
                     {
-                        while (roadx.Count != roadCount)
+                        if (_map[connectx][connecty + connectMove])
                         {
-                            a = roadx.Pop();
-                            b = roady.Pop();
-                            map[a][b] = true;
-                            if (map[a][b + 1])
+                            direction = true;
+                            connecty += connectMove;
+                        }
+                        else
+                        {
+                            if (directionMap[connectx][connecty + connectMove] == 0)
                             {
-                                directionMap[a][b + 1]++;
+                                directionMap[connectx][connecty + connectMove] = -1;
+                                wall.Push(connecty + connectMove);
+                                wall.Push(connectx);
                             }
-                            if (map[a][b - 1])
+                            if (_map[connectx + connectMove][connecty])
                             {
-                                directionMap[a][b - 1]++;
+                                connectx += connectMove;
                             }
-                        }
-                    }
-                    a = roadx.Peek();
-                    b = roady.Peek();
-                }
-                else
-                {
-                    moveStack.Push(0);
-                    restore.Push(roadx.Count);
-                    restore.Push(danger);
-                    prune = true;
-                    if (directionStack.Peek())
-                    {
-                        b += move;
-                        if (directionMap[a][b] == 1)
-                        {
-                            danger--;
-                        }
-                        if (danger > 1)
-                        {
-                            prune = false;
-                        }
-                        while (prune && map[a][b + move])
-                        {
-                            map[a][b] = false;
-                            roadx.Push(a);
-                            roady.Push(b);
-                            if (map[a + 1][b])
+                            else
                             {
-                                directionMap[a + 1][b]--;
-                                if (directionMap[a + 1][b] == 1)
+                                if (directionMap[connectx + connectMove][connecty] == 0)
                                 {
-                                    danger++;
-                                    if (danger == 2)
-                                    {
-                                        prune = false;
-                                    }
+                                    directionMap[connectx + connectMove][connecty] = -1;
+                                    wall.Push(connecty);
+                                    wall.Push(connectx + connectMove);
                                 }
-                            }
-                            if (map[a - 1][b])
-                            {
-                                directionMap[a - 1][b]--;
-                                if (directionMap[a - 1][b] == 1)
+                                if (_map[connectx][connecty - connectMove])
                                 {
-                                    danger++;
-                                    if (danger == 2)
-                                    {
-                                        prune = false;
-                                    }
-                                }
-                            }
-                            b += move;
-                        }
-                        if (prune)
-                        {
-                            if (map[a + 1][b])
-                            {
-                                if (map[a - 1][b])
-                                {
-                                    if (directionMap[a + 1][b] == 1 || directionMap[a - 1][b] == 1)
-                                    {
-                                        prune = false;
-                                    }
-                                    if (prune)
-                                    {
-                                        map[a][b] = false;
-                                        roadx.Push(a);
-                                        roady.Push(b);
-                                        roadCount = roadx.Count;
-                                        a++;
-                                        do
-                                        {
-                                            map[a][b] = false;
-                                            roadx.Push(a);
-                                            roady.Push(b);
-                                            horizontalConnect.Push(b);
-                                            horizontalConnect.Push(a);
-                                            a++;
-                                        } while (map[a][b]);
-                                        do
-                                        {
-                                            do
-                                            {
-                                                a = horizontalConnect.Pop();
-                                                move = horizontalConnect.Pop();
-                                                b = move + 1;
-                                                while (map[a][b])
-                                                {
-                                                    map[a][b] = false;
-                                                    roadx.Push(a);
-                                                    roady.Push(b);
-                                                    verticalConnect.Push(b);
-                                                    verticalConnect.Push(a);
-                                                    b++;
-                                                }
-                                                b = move - 1;
-                                                while (map[a][b])
-                                                {
-                                                    map[a][b] = false;
-                                                    roadx.Push(a);
-                                                    roady.Push(b);
-                                                    verticalConnect.Push(b);
-                                                    verticalConnect.Push(a);
-                                                    b--;
-                                                }
-                                            }
-                                            while (horizontalConnect.Count > 0);
-                                            while (verticalConnect.Count > 0)
-                                            {
-                                                move = verticalConnect.Pop();
-                                                b = verticalConnect.Pop();
-                                                a = move + 1;
-                                                while (map[a][b])
-                                                {
-                                                    map[a][b] = false;
-                                                    roadx.Push(a);
-                                                    roady.Push(b);
-                                                    horizontalConnect.Push(b);
-                                                    horizontalConnect.Push(a);
-                                                    a++;
-                                                }
-                                                a = move - 1;
-                                                while (map[a][b])
-                                                {
-                                                    map[a][b] = false;
-                                                    roadx.Push(a);
-                                                    roady.Push(b);
-                                                    horizontalConnect.Push(b);
-                                                    horizontalConnect.Push(a);
-                                                    a--;
-                                                }
-                                            }
-                                        } while (horizontalConnect.Count > 0);
-                                        if (roadx.Count == restCount)
-                                        {
-                                            do
-                                            {
-                                                map[roadx.Pop()][roady.Pop()] = true;
-                                            }
-                                            while (roadx.Count != roadCount);
-                                            moveStack.Push(1);
-                                            directionStack.Push(false);
-                                            moveStack.Push(-1);
-                                            directionStack.Push(false);
-                                            a = roadx.Peek();
-                                            b = roady.Peek();
-                                            directionMap[a + 1][b]--;
-                                            directionMap[a - 1][b]--;
-                                            if (directionMap[a + 1][b] == 1)
-                                            {
-                                                danger++;
-                                            }
-                                            if (directionMap[a - 1][b] == 1)
-                                            {
-                                                danger++;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            do
-                                            {
-                                                map[roadx.Pop()][roady.Pop()] = true;
-                                            }
-                                            while (roadx.Count != roadCount);
-                                            map[roadx.Pop()][roady.Pop()] = true;
-                                        }
-                                    }
+                                    connectMove = -connectMove;
+                                    direction = true;
+                                    connecty += connectMove;
                                 }
                                 else
                                 {
+                                    if (directionMap[connectx][connecty - connectMove] == 0)
+                                    {
+                                        directionMap[connectx][connecty - connectMove] = -1;
+                                        wall.Push(connecty - connectMove);
+                                        wall.Push(connectx);
+                                    }
+                                    connectMove = -connectMove;
+                                    connectx += connectMove;
+                                }
+                            }
+                        }
+                    }
+                } while (connectx != startx || connecty != starty);
+                if (map[a - 1][b])
+                {
+                    moveStack.Push(-1);
+                    directionStack.Push(false);
+                    directionMap[a - 1][b]--;
+                    if (directionMap[a - 1][b] == 1)
+                    {
+                        danger++;
+                    }
+                }
+                if (map[a][b - 1])
+                {
+                    moveStack.Push(-1);
+                    directionStack.Push(true);
+                    directionMap[a][b - 1]--;
+                    if (directionMap[a][b - 1] == 1)
+                    {
+                        danger++;
+                    }
+                }
+                if (map[a + 1][b])
+                {
+                    moveStack.Push(1);
+                    directionStack.Push(false);
+                    directionMap[a + 1][b]--;
+                    if (directionMap[a + 1][b] == 1)
+                    {
+                        danger++;
+                    }
+                }
+                if (map[a][b + 1])
+                {
+                    moveStack.Push(1);
+                    directionStack.Push(true);
+                    directionMap[a][b + 1]--;
+                    if (directionMap[a][b + 1] == 1)
+                    {
+                        danger++;
+                    }
+                }
+            }
+            else
+            {
+                if (map[a - 1][b])
+                {
+                    moveStack.Push(-1);
+                    directionStack.Push(false);
+                    directionMap[a - 1][b]--;
+                    if (directionMap[a - 1][b] < 2)
+                    {
+                        danger++;
+                    }
+                    if (!map[a - 1][b - 1])
+                    {
+                        preConnect.Enqueue(a - 1);
+                        preConnect.Enqueue(b - 1);
+                    }
+                }
+                if (map[a][b - 1])
+                {
+                    moveStack.Push(-1);
+                    directionStack.Push(true);
+                    directionMap[a][b - 1]--;
+                    if (directionMap[a][b - 1] < 2)
+                    {
+                        danger++;
+                    }
+                    if (!map[a + 1][b - 1])
+                    {
+                        preConnect.Enqueue(a + 1);
+                        preConnect.Enqueue(b - 1);
+                    }
+                }
+                if (map[a + 1][b])
+                {
+                    moveStack.Push(1);
+                    directionStack.Push(false);
+                    directionMap[a + 1][b]--;
+                    if (directionMap[a + 1][b] < 2)
+                    {
+                        danger++;
+                    }
+                    if (!map[a + 1][b + 1])
+                    {
+                        preConnect.Enqueue(a + 1);
+                        preConnect.Enqueue(b + 1);
+                    }
+                }
+                if (map[a][b + 1])
+                {
+                    moveStack.Push(1);
+                    directionStack.Push(true);
+                    directionMap[a][b + 1]--;
+                    if (directionMap[a][b + 1] < 2)
+                    {
+                        danger++;
+                    }
+                    if (!map[a - 1][b + 1])
+                    {
+                        preConnect.Enqueue(a - 1);
+                        preConnect.Enqueue(b + 1);
+                    }
+                }
+                while (preConnect.Count != 0)
+                {
+                    startx = preConnect.Dequeue();
+                    starty = preConnect.Dequeue();
+                    if (directionMap[startx][starty] == 0)
+                    {
+                        if (startx == a + 1)
+                        {
+                            if (starty == b + 1)
+                            {
+
+                                starty -= 1;
+                                connectx = startx;
+                                connecty = starty;
+                                connectMove = 1;
+                                direction = false;
+                            }
+                            else
+                            {
+                                startx -= 1;
+                                connectx = startx;
+                                connecty = starty;
+                                connectMove = -1;
+                                direction = true;
+                            }
+                        }
+                        else
+                        {
+                            if (starty == b + 1)
+                            {
+                                startx += 1;
+                                connectx = startx;
+                                connecty = starty;
+                                connectMove = 1;
+                                direction = true;
+                            }
+                            else
+                            {
+                                starty += 1;
+                                connectx = startx;
+                                connecty = starty;
+                                connectMove = -1;
+                                direction = false;
+                            }
+                        }
+                        do
+                        {
+                            if (direction)
+                            {
+                                if (_map[connectx - connectMove][connecty])
+                                {
+                                    connectMove = -connectMove;
+                                    direction = false;
+                                    connectx += connectMove;
+                                }
+                                else
+                                {
+                                    if (directionMap[connectx - connectMove][connecty] == 0)
+                                    {
+                                        directionMap[connectx - connectMove][connecty] = -1;
+                                        wall.Push(connecty);
+                                        wall.Push(connectx - connectMove);
+                                    }
+                                    if (_map[connectx][connecty + connectMove])
+                                    {
+                                        connecty += connectMove;
+                                    }
+                                    else
+                                    {
+                                        if (directionMap[connectx][connecty + connectMove] == 0)
+                                        {
+                                            directionMap[connectx][connecty + connectMove] = -1;
+                                            wall.Push(connecty + connectMove);
+                                            wall.Push(connectx);
+                                        }
+                                        if (_map[connectx + connectMove][connecty])
+                                        {
+                                            direction = false;
+                                            connectx += connectMove;
+                                        }
+                                        else
+                                        {
+                                            if (directionMap[connectx + connectMove][connecty] == 0)
+                                            {
+                                                directionMap[connectx + connectMove][connecty] = -1;
+                                                wall.Push(connecty);
+                                                wall.Push(connectx + connectMove);
+                                            }
+                                            connectMove = -connectMove;
+                                            connecty += connectMove;
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (_map[connectx][connecty + connectMove])
+                                {
+                                    direction = true;
+                                    connecty += connectMove;
+                                }
+                                else
+                                {
+                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                    {
+                                        directionMap[connectx][connecty + connectMove] = -1;
+                                        wall.Push(connecty + connectMove);
+                                        wall.Push(connectx);
+                                    }
+                                    if (_map[connectx + connectMove][connecty])
+                                    {
+                                        connectx += connectMove;
+                                    }
+                                    else
+                                    {
+                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                        {
+                                            directionMap[connectx + connectMove][connecty] = -1;
+                                            wall.Push(connecty);
+                                            wall.Push(connectx + connectMove);
+                                        }
+                                        if (_map[connectx][connecty - connectMove])
+                                        {
+                                            connectMove = -connectMove;
+                                            direction = true;
+                                            connecty += connectMove;
+                                        }
+                                        else
+                                        {
+                                            if (directionMap[connectx][connecty - connectMove] == 0)
+                                            {
+                                                directionMap[connectx][connecty - connectMove] = -1;
+                                                wall.Push(connecty - connectMove);
+                                                wall.Push(connectx);
+                                            }
+                                            connectMove = -connectMove;
+                                            connectx += connectMove;
+                                        }
+                                    }
+                                }
+                            }
+                        } while (connectx != startx || connecty != starty);
+                    }
+                    else
+                    {
+                        prune = false;
+                        break;
+                    }
+                };
+                if (prune)
+                {
+                    if (!map[a - 1][b] && directionMap[a - 1][b] == 0)
+                    {
+                        preConnect.Enqueue(a - 1);
+                        preConnect.Enqueue(b);
+                    }
+                    if (!map[a][b - 1] && directionMap[a][b - 1] == 0)
+                    {
+                        preConnect.Enqueue(a);
+                        preConnect.Enqueue(b - 1);
+                    }
+                    if (!map[a + 1][b] && directionMap[a + 1][b] == 0)
+                    {
+                        preConnect.Enqueue(a + 1);
+                        preConnect.Enqueue(b);
+                    }
+                    if (!map[a][b + 1] && directionMap[a][b + 1] == 0)
+                    {
+                        preConnect.Enqueue(a);
+                        preConnect.Enqueue(b + 1);
+                    }
+                    while (preConnect.Count != 0)
+                    {
+                        startx = preConnect.Dequeue();
+                        starty = preConnect.Dequeue();
+                        if (startx == a)
+                        {
+                            if (starty == b + 1)
+                            {
+                                starty = b;
+                                connectx = startx;
+                                connecty = starty;
+                                connectMove = 1;
+                                direction = false;
+                            }
+                            else
+                            {
+                                starty = b;
+                                connectx = startx;
+                                connecty = starty;
+                                connectMove = -1;
+                                direction = false;
+                            }
+                        }
+                        else
+                        {
+                            if (startx == a + 1)
+                            {
+                                startx = a;
+                                connectx = startx;
+                                connecty = starty;
+                                connectMove = -1;
+                                direction = true;
+                            }
+                            else
+                            {
+                                startx = a;
+                                connectx = startx;
+                                connecty = starty;
+                                connectMove = 1;
+                                direction = true;
+                            }
+                        }
+                        do
+                        {
+                            if (direction)
+                            {
+                                if (_map[connectx - connectMove][connecty])
+                                {
+                                    connectMove = -connectMove;
+                                    direction = false;
+                                    connectx += connectMove;
+                                }
+                                else
+                                {
+                                    if (directionMap[connectx - connectMove][connecty] == 0)
+                                    {
+                                        directionMap[connectx - connectMove][connecty] = -1;
+                                        wall.Push(connecty);
+                                        wall.Push(connectx - connectMove);
+                                    }
+                                    if (_map[connectx][connecty + connectMove])
+                                    {
+                                        connecty += connectMove;
+                                    }
+                                    else
+                                    {
+                                        if (directionMap[connectx][connecty + connectMove] == 0)
+                                        {
+                                            directionMap[connectx][connecty + connectMove] = -1;
+                                            wall.Push(connecty + connectMove);
+                                            wall.Push(connectx);
+                                        }
+                                        if (_map[connectx + connectMove][connecty])
+                                        {
+                                            direction = false;
+                                            connectx += connectMove;
+                                        }
+                                        else
+                                        {
+                                            if (directionMap[connectx + connectMove][connecty] == 0)
+                                            {
+                                                directionMap[connectx + connectMove][connecty] = -1;
+                                                wall.Push(connecty);
+                                                wall.Push(connectx + connectMove);
+                                            }
+                                            connectMove = -connectMove;
+                                            connecty += connectMove;
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (_map[connectx][connecty + connectMove])
+                                {
+                                    direction = true;
+                                    connecty += connectMove;
+                                }
+                                else
+                                {
+                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                    {
+                                        directionMap[connectx][connecty + connectMove] = -1;
+                                        wall.Push(connecty + connectMove);
+                                        wall.Push(connectx);
+                                    }
+                                    if (_map[connectx + connectMove][connecty])
+                                    {
+                                        connectx += connectMove;
+                                    }
+                                    else
+                                    {
+                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                        {
+                                            directionMap[connectx + connectMove][connecty] = -1;
+                                            wall.Push(connecty);
+                                            wall.Push(connectx + connectMove);
+                                        }
+                                        if (_map[connectx][connecty - connectMove])
+                                        {
+                                            connectMove = -connectMove;
+                                            direction = true;
+                                            connecty += connectMove;
+                                        }
+                                        else
+                                        {
+                                            if (directionMap[connectx][connecty - connectMove] == 0)
+                                            {
+                                                directionMap[connectx][connecty - connectMove] = -1;
+                                                wall.Push(connecty - connectMove);
+                                                wall.Push(connectx);
+                                            }
+                                            connectMove = -connectMove;
+                                            connectx += connectMove;
+                                        }
+                                    }
+                                }
+                            }
+                        } while (connectx != startx || connecty != starty);
+                    }
+                }
+            }
+            if (prune)
+            {
+                while (moveStack.Count > 0)
+                {
+                    move = moveStack.Pop();
+                    if (move == 0)
+                    {
+                        danger = restore.Pop();
+                        wallCount = restore.Pop();
+                        while (wall.Count != wallCount)
+                        {
+                            directionMap[wall.Pop()][wall.Pop()] = 0;
+                        }
+                        roadCount = restore.Pop();
+                        if (directionStack.Pop())
+                        {
+                            while (roadx.Count != roadCount)
+                            {
+                                a = roadx.Pop();
+                                b = roady.Pop();
+                                map[a][b] = true;
+                                if (map[a + 1][b])
+                                {
+                                    directionMap[a + 1][b]++;
+                                }
+                                if (map[a - 1][b])
+                                {
+                                    directionMap[a - 1][b]++;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            while (roadx.Count != roadCount)
+                            {
+                                a = roadx.Pop();
+                                b = roady.Pop();
+                                map[a][b] = true;
+                                if (map[a][b + 1])
+                                {
+                                    directionMap[a][b + 1]++;
+                                }
+                                if (map[a][b - 1])
+                                {
+                                    directionMap[a][b - 1]++;
+                                }
+                            }
+                        }
+                        a = roadx.Peek();
+                        b = roady.Peek();
+                    }
+                    else
+                    {
+                        moveStack.Push(0);
+                        restore.Push(roadx.Count);
+                        restore.Push(wall.Count);
+                        restore.Push(danger);
+                        prune = true;
+                        preConnect.Clear();
+                        if (directionStack.Peek())
+                        {
+                            b += move;
+                            if (directionMap[a][b] == 1)
+                            {
+                                danger--;
+                            }
+                            if (danger > 1)
+                            {
+                                prune = false;
+                            }
+                            while (prune && map[a][b + move])
+                            {
+                                map[a][b] = false;
+                                roadx.Push(a);
+                                roady.Push(b);
+                                if (map[a + 1][b])
+                                {
+                                    directionMap[a + 1][b]--;
                                     if (directionMap[a + 1][b] == 1)
                                     {
-                                        if (roadx.Count + 2 == restCount)
+                                        danger++;
+                                        if (danger == 2)
                                         {
-                                            map[a][b] = false;
-                                            roadx.Push(a);
-                                            roady.Push(b);
-                                            a++;
-                                            map[a][b] = false;
-                                            roadx.Push(a);
-                                            roady.Push(b);
-                                            return true;
+                                            prune = false;
                                         }
                                     }
-                                    else
+                                    if (!map[a + 1][b + move])
                                     {
-                                        map[a][b] = false;
-                                        roadx.Push(a);
-                                        roady.Push(b);
-                                        moveStack.Push(1);
-                                        directionStack.Push(false);
-                                        directionMap[a + 1][b]--;
-                                        if (directionMap[a + 1][b] == 1)
-                                        {
-                                            danger++;
-                                        }
+                                        preConnect.Enqueue(a + 1);
+                                        preConnect.Enqueue(b + move);
                                     }
                                 }
-                            }
-                            else
-                            {
                                 if (map[a - 1][b])
                                 {
+                                    directionMap[a - 1][b]--;
                                     if (directionMap[a - 1][b] == 1)
                                     {
-                                        if (roadx.Count + 2 == restCount)
+                                        danger++;
+                                        if (danger == 2)
                                         {
-                                            map[a][b] = false;
-                                            roadx.Push(a);
-                                            roady.Push(b);
-                                            a--;
-                                            map[a][b] = false;
-                                            roadx.Push(a);
-                                            roady.Push(b);
-                                            return true;
+                                            prune = false;
+                                        }
+                                    }
+                                    if (!map[a - 1][b + move])
+                                    {
+                                        preConnect.Enqueue(a - 1);
+                                        preConnect.Enqueue(b + move);
+                                    }
+                                }
+                                b += move;
+                            }
+                            if (prune)
+                            {
+                                if (map[a + 1][b])
+                                {
+                                    if (map[a - 1][b])
+                                    {
+                                        if (directionMap[a + 1][b] == 1 || directionMap[a - 1][b] == 1)
+                                        {
+                                            prune = false;
+                                        }
+                                        if (prune)
+                                        {
+                                            preConnect.Enqueue(a);
+                                            preConnect.Enqueue(b + move);
+                                            do
+                                            {
+                                                startx = preConnect.Dequeue();
+                                                starty = preConnect.Dequeue();
+                                                if (directionMap[startx][starty] == 0)
+                                                {
+                                                    starty -= move;
+                                                    connectx = startx;
+                                                    connecty = starty;
+                                                    connectMove = move;
+                                                    direction = false;
+                                                    do
+                                                    {
+                                                        if (direction)
+                                                        {
+                                                            if (_map[connectx - connectMove][connecty])
+                                                            {
+                                                                connectMove = -connectMove;
+                                                                direction = false;
+                                                                connectx += connectMove;
+                                                            }
+                                                            else
+                                                            {
+                                                                if (directionMap[connectx - connectMove][connecty] == 0)
+                                                                {
+                                                                    directionMap[connectx - connectMove][connecty] = -1;
+                                                                    wall.Push(connecty);
+                                                                    wall.Push(connectx - connectMove);
+                                                                }
+                                                                if (_map[connectx][connecty + connectMove])
+                                                                {
+                                                                    connecty += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                    {
+                                                                        directionMap[connectx][connecty + connectMove] = -1;
+                                                                        wall.Push(connecty + connectMove);
+                                                                        wall.Push(connectx);
+                                                                    }
+                                                                    if (_map[connectx + connectMove][connecty])
+                                                                    {
+                                                                        direction = false;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                        {
+                                                                            directionMap[connectx + connectMove][connecty] = -1;
+                                                                            wall.Push(connecty);
+                                                                            wall.Push(connectx + connectMove);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            if (_map[connectx][connecty + connectMove])
+                                                            {
+                                                                direction = true;
+                                                                connecty += connectMove;
+                                                            }
+                                                            else
+                                                            {
+                                                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                {
+                                                                    directionMap[connectx][connecty + connectMove] = -1;
+                                                                    wall.Push(connecty + connectMove);
+                                                                    wall.Push(connectx);
+                                                                }
+                                                                if (_map[connectx + connectMove][connecty])
+                                                                {
+                                                                    connectx += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                    {
+                                                                        directionMap[connectx + connectMove][connecty] = -1;
+                                                                        wall.Push(connecty);
+                                                                        wall.Push(connectx + connectMove);
+                                                                    }
+                                                                    if (_map[connectx][connecty - connectMove])
+                                                                    {
+                                                                        connectMove = -connectMove;
+                                                                        direction = true;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx][connecty - connectMove] == 0)
+                                                                        {
+                                                                            directionMap[connectx][connecty - connectMove] = -1;
+                                                                            wall.Push(connecty - connectMove);
+                                                                            wall.Push(connectx);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    } while (connectx != startx || connecty != starty);
+                                                }
+                                                else
+                                                {
+                                                    prune = false;
+                                                    break;
+                                                }
+                                            } while (preConnect.Count != 0);
+                                            if (prune)
+                                            {
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                moveStack.Push(1);
+                                                directionStack.Push(false);
+                                                moveStack.Push(-1);
+                                                directionStack.Push(false);
+                                                directionMap[a + 1][b]--;
+                                                directionMap[a - 1][b]--;
+                                                if (directionMap[a + 1][b] == 1)
+                                                {
+                                                    danger++;
+                                                }
+                                                if (directionMap[a - 1][b] == 1)
+                                                {
+                                                    danger++;
+                                                }
+                                            }
                                         }
                                     }
                                     else
                                     {
-                                        map[a][b] = false;
-                                        roadx.Push(a);
-                                        roady.Push(b);
-                                        moveStack.Push(-1);
-                                        directionStack.Push(false);
-                                        directionMap[a - 1][b]--;
-                                        if (directionMap[a - 1][b] == 1)
+                                        if (directionMap[a + 1][b] == 1)
                                         {
-                                            danger++;
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    if (roadx.Count + 1 == restCount)
-                                    {
-                                        map[a][b] = false;
-                                        roadx.Push(a);
-                                        roady.Push(b);
-                                        return true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        a += move;
-                        if (directionMap[a][b] == 1)
-                        {
-                            danger--;
-                        }
-                        if (danger > 1)
-                        {
-                            prune = false;
-                        }
-                        while (prune && map[a + move][b])
-                        {
-                            map[a][b] = false;
-                            roadx.Push(a);
-                            roady.Push(b);
-                            if (map[a][b + 1])
-                            {
-                                directionMap[a][b + 1]--;
-                                if (directionMap[a][b + 1] == 1)
-                                {
-                                    danger++;
-                                    if (danger == 2)
-                                    {
-                                        prune = false;
-                                    }
-                                }
-                            }
-                            if (map[a][b - 1])
-                            {
-                                directionMap[a][b - 1]--;
-                                if (directionMap[a][b - 1] == 1)
-                                {
-                                    danger++;
-                                    if (danger == 2)
-                                    {
-                                        prune = false;
-                                    }
-                                }
-                            }
-                            a += move;
-                        }
-                        if (prune)
-                        {
-                            if (map[a][b + 1])
-                            {
-                                if (map[a][b - 1])
-                                {
-                                    if (directionMap[a][b + 1] == 1 || directionMap[a][b - 1] == 1)
-                                    {
-                                        prune = false;
-                                    }
-                                    if (prune)
-                                    {
-                                        map[a][b] = false;
-                                        roadx.Push(a);
-                                        roady.Push(b);
-                                        roadCount = roadx.Count;
-                                        b++;
-                                        do
-                                        {
-                                            map[a][b] = false;
-                                            roadx.Push(a);
-                                            roady.Push(b);
-                                            verticalConnect.Push(b);
-                                            verticalConnect.Push(a);
-                                            b++;
-                                        } while (map[a][b]);
-                                        do
-                                        {
-                                            do
+                                            if (roadx.Count + 2 == restCount)
                                             {
-                                                move = verticalConnect.Pop();
-                                                b = verticalConnect.Pop();
-                                                a = move + 1;
-                                                while (map[a][b])
-                                                {
-                                                    map[a][b] = false;
-                                                    roadx.Push(a);
-                                                    roady.Push(b);
-                                                    horizontalConnect.Push(b);
-                                                    horizontalConnect.Push(a);
-                                                    a++;
-                                                }
-                                                a = move - 1;
-                                                while (map[a][b])
-                                                {
-                                                    map[a][b] = false;
-                                                    roadx.Push(a);
-                                                    roady.Push(b);
-                                                    horizontalConnect.Push(b);
-                                                    horizontalConnect.Push(a);
-                                                    a--;
-                                                }
-                                            }
-                                            while (verticalConnect.Count > 0);
-                                            while (horizontalConnect.Count > 0)
-                                            {
-                                                a = horizontalConnect.Pop();
-                                                move = horizontalConnect.Pop();
-                                                b = move + 1;
-                                                while (map[a][b])
-                                                {
-                                                    map[a][b] = false;
-                                                    roadx.Push(a);
-                                                    roady.Push(b);
-                                                    verticalConnect.Push(b);
-                                                    verticalConnect.Push(a);
-                                                    b++;
-                                                }
-                                                b = move - 1;
-                                                while (map[a][b])
-                                                {
-                                                    map[a][b] = false;
-                                                    roadx.Push(a);
-                                                    roady.Push(b);
-                                                    verticalConnect.Push(b);
-                                                    verticalConnect.Push(a);
-                                                    b--;
-                                                }
-                                            }
-                                        } while (verticalConnect.Count > 0);
-                                        if (roadx.Count == restCount)
-                                        {
-                                            do
-                                            {
-                                                map[roadx.Pop()][roady.Pop()] = true;
-                                            }
-                                            while (roadx.Count != roadCount);
-                                            moveStack.Push(1);
-                                            directionStack.Push(true);
-                                            moveStack.Push(-1);
-                                            directionStack.Push(true);
-                                            a = roadx.Peek();
-                                            b = roady.Peek();
-                                            directionMap[a][b + 1]--;
-                                            directionMap[a][b - 1]--;
-                                            if (directionMap[a][b + 1] == 1)
-                                            {
-                                                danger++;
-                                            }
-                                            if (directionMap[a][b - 1] == 1)
-                                            {
-                                                danger++;
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                a++;
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                return true;
                                             }
                                         }
                                         else
                                         {
-                                            do
+                                            while (preConnect.Count != 0)
                                             {
-                                                map[roadx.Pop()][roady.Pop()] = true;
+                                                startx = preConnect.Dequeue();
+                                                starty = preConnect.Dequeue();
+                                                if (directionMap[startx][starty] == 0)
+                                                {
+                                                    starty -= move;
+                                                    connectx = startx;
+                                                    connecty = starty;
+                                                    connectMove = move;
+                                                    direction = false;
+                                                    do
+                                                    {
+                                                        if (direction)
+                                                        {
+                                                            if (_map[connectx - connectMove][connecty])
+                                                            {
+                                                                connectMove = -connectMove;
+                                                                direction = false;
+                                                                connectx += connectMove;
+                                                            }
+                                                            else
+                                                            {
+                                                                if (directionMap[connectx - connectMove][connecty] == 0)
+                                                                {
+                                                                    directionMap[connectx - connectMove][connecty] = -1;
+                                                                    wall.Push(connecty);
+                                                                    wall.Push(connectx - connectMove);
+                                                                }
+                                                                if (_map[connectx][connecty + connectMove])
+                                                                {
+                                                                    connecty += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                    {
+                                                                        directionMap[connectx][connecty + connectMove] = -1;
+                                                                        wall.Push(connecty + connectMove);
+                                                                        wall.Push(connectx);
+                                                                    }
+                                                                    if (_map[connectx + connectMove][connecty])
+                                                                    {
+                                                                        direction = false;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                        {
+                                                                            directionMap[connectx + connectMove][connecty] = -1;
+                                                                            wall.Push(connecty);
+                                                                            wall.Push(connectx + connectMove);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            if (_map[connectx][connecty + connectMove])
+                                                            {
+                                                                direction = true;
+                                                                connecty += connectMove;
+                                                            }
+                                                            else
+                                                            {
+                                                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                {
+                                                                    directionMap[connectx][connecty + connectMove] = -1;
+                                                                    wall.Push(connecty + connectMove);
+                                                                    wall.Push(connectx);
+                                                                }
+                                                                if (_map[connectx + connectMove][connecty])
+                                                                {
+                                                                    connectx += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                    {
+                                                                        directionMap[connectx + connectMove][connecty] = -1;
+                                                                        wall.Push(connecty);
+                                                                        wall.Push(connectx + connectMove);
+                                                                    }
+                                                                    if (_map[connectx][connecty - connectMove])
+                                                                    {
+                                                                        connectMove = -connectMove;
+                                                                        direction = true;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx][connecty - connectMove] == 0)
+                                                                        {
+                                                                            directionMap[connectx][connecty - connectMove] = -1;
+                                                                            wall.Push(connecty - connectMove);
+                                                                            wall.Push(connectx);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    } while (connectx != startx || connecty != starty);
+                                                }
+                                                else
+                                                {
+                                                    prune = false;
+                                                    break;
+                                                }
+                                            };
+                                            if (prune)
+                                            {
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                moveStack.Push(1);
+                                                directionStack.Push(false);
+                                                directionMap[a + 1][b]--;
+                                                if (directionMap[a + 1][b] == 1)
+                                                {
+                                                    danger++;
+                                                }
                                             }
-                                            while (roadx.Count != roadCount);
-                                            map[roadx.Pop()][roady.Pop()] = true;
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    if (directionMap[a][b + 1] == 1)
+                                    if (map[a - 1][b])
                                     {
-                                        if (roadx.Count + 2 == restCount)
+                                        if (directionMap[a - 1][b] == 1)
                                         {
-                                            map[a][b] = false;
-                                            roadx.Push(a);
-                                            roady.Push(b);
-                                            b++;
-                                            map[a][b] = false;
-                                            roadx.Push(a);
-                                            roady.Push(b);
-                                            return true;
+                                            if (roadx.Count + 2 == restCount)
+                                            {
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                a--;
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                return true;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            while (preConnect.Count != 0)
+                                            {
+                                                startx = preConnect.Dequeue();
+                                                starty = preConnect.Dequeue();
+                                                if (directionMap[startx][starty] == 0)
+                                                {
+                                                    starty -= move;
+                                                    connectx = startx;
+                                                    connecty = starty;
+                                                    connectMove = move;
+                                                    direction = false;
+                                                    do
+                                                    {
+                                                        if (direction)
+                                                        {
+                                                            if (_map[connectx - connectMove][connecty])
+                                                            {
+                                                                connectMove = -connectMove;
+                                                                direction = false;
+                                                                connectx += connectMove;
+                                                            }
+                                                            else
+                                                            {
+                                                                if (directionMap[connectx - connectMove][connecty] == 0)
+                                                                {
+                                                                    directionMap[connectx - connectMove][connecty] = -1;
+                                                                    wall.Push(connecty);
+                                                                    wall.Push(connectx - connectMove);
+                                                                }
+                                                                if (_map[connectx][connecty + connectMove])
+                                                                {
+                                                                    connecty += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                    {
+                                                                        directionMap[connectx][connecty + connectMove] = -1;
+                                                                        wall.Push(connecty + connectMove);
+                                                                        wall.Push(connectx);
+                                                                    }
+                                                                    if (_map[connectx + connectMove][connecty])
+                                                                    {
+                                                                        direction = false;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                        {
+                                                                            directionMap[connectx + connectMove][connecty] = -1;
+                                                                            wall.Push(connecty);
+                                                                            wall.Push(connectx + connectMove);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            if (_map[connectx][connecty + connectMove])
+                                                            {
+                                                                direction = true;
+                                                                connecty += connectMove;
+                                                            }
+                                                            else
+                                                            {
+                                                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                {
+                                                                    directionMap[connectx][connecty + connectMove] = -1;
+                                                                    wall.Push(connecty + connectMove);
+                                                                    wall.Push(connectx);
+                                                                }
+                                                                if (_map[connectx + connectMove][connecty])
+                                                                {
+                                                                    connectx += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                    {
+                                                                        directionMap[connectx + connectMove][connecty] = -1;
+                                                                        wall.Push(connecty);
+                                                                        wall.Push(connectx + connectMove);
+                                                                    }
+                                                                    if (_map[connectx][connecty - connectMove])
+                                                                    {
+                                                                        connectMove = -connectMove;
+                                                                        direction = true;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx][connecty - connectMove] == 0)
+                                                                        {
+                                                                            directionMap[connectx][connecty - connectMove] = -1;
+                                                                            wall.Push(connecty - connectMove);
+                                                                            wall.Push(connectx);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    } while (connectx != startx || connecty != starty);
+                                                }
+                                                else
+                                                {
+                                                    prune = false;
+                                                    break;
+                                                }
+                                            };
+                                            if (prune)
+                                            {
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                moveStack.Push(-1);
+                                                directionStack.Push(false);
+                                                directionMap[a - 1][b]--;
+                                                if (directionMap[a - 1][b] == 1)
+                                                {
+                                                    danger++;
+                                                }
+                                            }
                                         }
                                     }
                                     else
                                     {
-                                        map[a][b] = false;
-                                        roadx.Push(a);
-                                        roady.Push(b);
-                                        moveStack.Push(1);
-                                        directionStack.Push(true);
-                                        directionMap[a][b + 1]--;
-                                        if (directionMap[a][b + 1] == 1)
+                                        if (roadx.Count + 1 == restCount)
                                         {
-                                            danger++;
+                                            map[a][b] = false;
+                                            roadx.Push(a);
+                                            roady.Push(b);
+                                            return true;
                                         }
                                     }
                                 }
                             }
-                            else
+                        }
+                        else
+                        {
+                            a += move;
+                            if (directionMap[a][b] == 1)
                             {
+                                danger--;
+                            }
+                            if (danger > 1)
+                            {
+                                prune = false;
+                            }
+                            while (prune && map[a + move][b])
+                            {
+                                map[a][b] = false;
+                                roadx.Push(a);
+                                roady.Push(b);
+                                if (map[a][b + 1])
+                                {
+                                    directionMap[a][b + 1]--;
+                                    if (directionMap[a][b + 1] == 1)
+                                    {
+                                        danger++;
+                                        if (danger == 2)
+                                        {
+                                            prune = false;
+                                        }
+                                    }
+                                    if (!map[a + move][b + 1])
+                                    {
+                                        preConnect.Enqueue(a + move);
+                                        preConnect.Enqueue(b + 1);
+                                    }
+                                }
                                 if (map[a][b - 1])
                                 {
+                                    directionMap[a][b - 1]--;
                                     if (directionMap[a][b - 1] == 1)
                                     {
-                                        if (roadx.Count + 2 == restCount)
+                                        danger++;
+                                        if (danger == 2)
                                         {
-                                            map[a][b] = false;
-                                            roadx.Push(a);
-                                            roady.Push(b);
-                                            b--;
-                                            map[a][b] = false;
-                                            roadx.Push(a);
-                                            roady.Push(b);
-                                            return true;
+                                            prune = false;
+                                        }
+                                    }
+                                    if (!map[a + move][b - 1])
+                                    {
+                                        preConnect.Enqueue(a + move);
+                                        preConnect.Enqueue(b - 1);
+                                    }
+                                }
+                                a += move;
+                            }
+                            if (prune)
+                            {
+                                if (map[a][b + 1])
+                                {
+                                    if (map[a][b - 1])
+                                    {
+                                        if (directionMap[a][b + 1] == 1 || directionMap[a][b - 1] == 1)
+                                        {
+                                            prune = false;
+                                        }
+                                        if (prune)
+                                        {
+                                            preConnect.Enqueue(a + move);
+                                            preConnect.Enqueue(b);
+                                            do
+                                            {
+                                                startx = preConnect.Dequeue();
+                                                starty = preConnect.Dequeue();
+                                                if (directionMap[startx][starty] == 0)
+                                                {
+                                                    startx -= move;
+                                                    connectx = startx;
+                                                    connecty = starty;
+                                                    connectMove = -move;
+                                                    direction = true;
+                                                    do
+                                                    {
+                                                        if (direction)
+                                                        {
+                                                            if (_map[connectx - connectMove][connecty])
+                                                            {
+                                                                connectMove = -connectMove;
+                                                                direction = false;
+                                                                connectx += connectMove;
+                                                            }
+                                                            else
+                                                            {
+                                                                if (directionMap[connectx - connectMove][connecty] == 0)
+                                                                {
+                                                                    directionMap[connectx - connectMove][connecty] = -1;
+                                                                    wall.Push(connecty);
+                                                                    wall.Push(connectx - connectMove);
+                                                                }
+                                                                if (_map[connectx][connecty + connectMove])
+                                                                {
+                                                                    connecty += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                    {
+                                                                        directionMap[connectx][connecty + connectMove] = -1;
+                                                                        wall.Push(connecty + connectMove);
+                                                                        wall.Push(connectx);
+                                                                    }
+                                                                    if (_map[connectx + connectMove][connecty])
+                                                                    {
+                                                                        direction = false;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                        {
+                                                                            directionMap[connectx + connectMove][connecty] = -1;
+                                                                            wall.Push(connecty);
+                                                                            wall.Push(connectx + connectMove);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            if (_map[connectx][connecty + connectMove])
+                                                            {
+                                                                direction = true;
+                                                                connecty += connectMove;
+                                                            }
+                                                            else
+                                                            {
+                                                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                {
+                                                                    directionMap[connectx][connecty + connectMove] = -1;
+                                                                    wall.Push(connecty + connectMove);
+                                                                    wall.Push(connectx);
+                                                                }
+                                                                if (_map[connectx + connectMove][connecty])
+                                                                {
+                                                                    connectx += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                    {
+                                                                        directionMap[connectx + connectMove][connecty] = -1;
+                                                                        wall.Push(connecty);
+                                                                        wall.Push(connectx + connectMove);
+                                                                    }
+                                                                    if (_map[connectx][connecty - connectMove])
+                                                                    {
+                                                                        connectMove = -connectMove;
+                                                                        direction = true;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx][connecty - connectMove] == 0)
+                                                                        {
+                                                                            directionMap[connectx][connecty - connectMove] = -1;
+                                                                            wall.Push(connecty - connectMove);
+                                                                            wall.Push(connectx);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    } while (connectx != startx || connecty != starty);
+                                                }
+                                                else
+                                                {
+                                                    prune = false;
+                                                    break;
+                                                }
+                                            } while (preConnect.Count != 0);
+                                            if (prune)
+                                            {
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                moveStack.Push(1);
+                                                directionStack.Push(true);
+                                                moveStack.Push(-1);
+                                                directionStack.Push(true);
+                                                directionMap[a][b + 1]--;
+                                                directionMap[a][b - 1]--;
+                                                if (directionMap[a][b + 1] == 1)
+                                                {
+                                                    danger++;
+                                                }
+                                                if (directionMap[a][b - 1] == 1)
+                                                {
+                                                    danger++;
+                                                }
+                                            }
                                         }
                                     }
                                     else
                                     {
-                                        map[a][b] = false;
-                                        roadx.Push(a);
-                                        roady.Push(b);
-                                        moveStack.Push(-1);
-                                        directionStack.Push(true);
-                                        directionMap[a][b - 1]--;
-                                        if (directionMap[a][b - 1] == 1)
+                                        if (directionMap[a][b + 1] == 1)
                                         {
-                                            danger++;
+                                            if (roadx.Count + 2 == restCount)
+                                            {
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                b++;
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                return true;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            while (preConnect.Count != 0)
+                                            {
+                                                startx = preConnect.Dequeue();
+                                                starty = preConnect.Dequeue();
+                                                if (directionMap[startx][starty] == 0)
+                                                {
+                                                    startx -= move;
+                                                    connectx = startx;
+                                                    connecty = starty;
+                                                    connectMove = -move;
+                                                    direction = true;
+                                                    do
+                                                    {
+                                                        if (direction)
+                                                        {
+                                                            if (_map[connectx - connectMove][connecty])
+                                                            {
+                                                                connectMove = -connectMove;
+                                                                direction = false;
+                                                                connectx += connectMove;
+                                                            }
+                                                            else
+                                                            {
+                                                                if (directionMap[connectx - connectMove][connecty] == 0)
+                                                                {
+                                                                    directionMap[connectx - connectMove][connecty] = -1;
+                                                                    wall.Push(connecty);
+                                                                    wall.Push(connectx - connectMove);
+                                                                }
+                                                                if (_map[connectx][connecty + connectMove])
+                                                                {
+                                                                    connecty += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                    {
+                                                                        directionMap[connectx][connecty + connectMove] = -1;
+                                                                        wall.Push(connecty + connectMove);
+                                                                        wall.Push(connectx);
+                                                                    }
+                                                                    if (_map[connectx + connectMove][connecty])
+                                                                    {
+                                                                        direction = false;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                        {
+                                                                            directionMap[connectx + connectMove][connecty] = -1;
+                                                                            wall.Push(connecty);
+                                                                            wall.Push(connectx + connectMove);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            if (_map[connectx][connecty + connectMove])
+                                                            {
+                                                                direction = true;
+                                                                connecty += connectMove;
+                                                            }
+                                                            else
+                                                            {
+                                                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                {
+                                                                    directionMap[connectx][connecty + connectMove] = -1;
+                                                                    wall.Push(connecty + connectMove);
+                                                                    wall.Push(connectx);
+                                                                }
+                                                                if (_map[connectx + connectMove][connecty])
+                                                                {
+                                                                    connectx += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                    {
+                                                                        directionMap[connectx + connectMove][connecty] = -1;
+                                                                        wall.Push(connecty);
+                                                                        wall.Push(connectx + connectMove);
+                                                                    }
+                                                                    if (_map[connectx][connecty - connectMove])
+                                                                    {
+                                                                        connectMove = -connectMove;
+                                                                        direction = true;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx][connecty - connectMove] == 0)
+                                                                        {
+                                                                            directionMap[connectx][connecty - connectMove] = -1;
+                                                                            wall.Push(connecty - connectMove);
+                                                                            wall.Push(connectx);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    } while (connectx != startx || connecty != starty);
+                                                }
+                                                else
+                                                {
+                                                    prune = false;
+                                                    break;
+                                                }
+                                            };
+                                            if (prune)
+                                            {
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                moveStack.Push(1);
+                                                directionStack.Push(true);
+                                                directionMap[a][b + 1]--;
+                                                if (directionMap[a][b + 1] == 1)
+                                                {
+                                                    danger++;
+                                                }
+                                            }
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    if (roadx.Count + 1 == restCount)
+                                    if (map[a][b - 1])
                                     {
-                                        map[a][b] = false;
-                                        roadx.Push(a);
-                                        roady.Push(b);
-                                        return true;
+                                        if (directionMap[a][b - 1] == 1)
+                                        {
+                                            if (roadx.Count + 2 == restCount)
+                                            {
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                b--;
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                return true;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            while (preConnect.Count != 0)
+                                            {
+                                                startx = preConnect.Dequeue();
+                                                starty = preConnect.Dequeue();
+                                                if (directionMap[startx][starty] == 0)
+                                                {
+                                                    startx -= move;
+                                                    connectx = startx;
+                                                    connecty = starty;
+                                                    connectMove = -move;
+                                                    direction = true;
+                                                    do
+                                                    {
+                                                        if (direction)
+                                                        {
+                                                            if (_map[connectx - connectMove][connecty])
+                                                            {
+                                                                connectMove = -connectMove;
+                                                                direction = false;
+                                                                connectx += connectMove;
+                                                            }
+                                                            else
+                                                            {
+                                                                if (directionMap[connectx - connectMove][connecty] == 0)
+                                                                {
+                                                                    directionMap[connectx - connectMove][connecty] = -1;
+                                                                    wall.Push(connecty);
+                                                                    wall.Push(connectx - connectMove);
+                                                                }
+                                                                if (_map[connectx][connecty + connectMove])
+                                                                {
+                                                                    connecty += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                    {
+                                                                        directionMap[connectx][connecty + connectMove] = -1;
+                                                                        wall.Push(connecty + connectMove);
+                                                                        wall.Push(connectx);
+                                                                    }
+                                                                    if (_map[connectx + connectMove][connecty])
+                                                                    {
+                                                                        direction = false;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                        {
+                                                                            directionMap[connectx + connectMove][connecty] = -1;
+                                                                            wall.Push(connecty);
+                                                                            wall.Push(connectx + connectMove);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            if (_map[connectx][connecty + connectMove])
+                                                            {
+                                                                direction = true;
+                                                                connecty += connectMove;
+                                                            }
+                                                            else
+                                                            {
+                                                                if (directionMap[connectx][connecty + connectMove] == 0)
+                                                                {
+                                                                    directionMap[connectx][connecty + connectMove] = -1;
+                                                                    wall.Push(connecty + connectMove);
+                                                                    wall.Push(connectx);
+                                                                }
+                                                                if (_map[connectx + connectMove][connecty])
+                                                                {
+                                                                    connectx += connectMove;
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (directionMap[connectx + connectMove][connecty] == 0)
+                                                                    {
+                                                                        directionMap[connectx + connectMove][connecty] = -1;
+                                                                        wall.Push(connecty);
+                                                                        wall.Push(connectx + connectMove);
+                                                                    }
+                                                                    if (_map[connectx][connecty - connectMove])
+                                                                    {
+                                                                        connectMove = -connectMove;
+                                                                        direction = true;
+                                                                        connecty += connectMove;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (directionMap[connectx][connecty - connectMove] == 0)
+                                                                        {
+                                                                            directionMap[connectx][connecty - connectMove] = -1;
+                                                                            wall.Push(connecty - connectMove);
+                                                                            wall.Push(connectx);
+                                                                        }
+                                                                        connectMove = -connectMove;
+                                                                        connectx += connectMove;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    } while (connectx != startx || connecty != starty);
+                                                }
+                                                else
+                                                {
+                                                    prune = false;
+                                                    break;
+                                                }
+                                            };
+                                            if (prune)
+                                            {
+                                                map[a][b] = false;
+                                                roadx.Push(a);
+                                                roady.Push(b);
+                                                moveStack.Push(-1);
+                                                directionStack.Push(true);
+                                                directionMap[a][b - 1]--;
+                                                if (directionMap[a][b - 1] == 1)
+                                                {
+                                                    danger++;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (roadx.Count + 1 == restCount)
+                                        {
+                                            map[a][b] = false;
+                                            roadx.Push(a);
+                                            roady.Push(b);
+                                            return true;
+                                        }
                                     }
                                 }
                             }
@@ -826,6 +1881,10 @@ namespace Roomba
             if (map[a][b + 1])
             {
                 directionMap[a][b + 1]++;
+            }
+            while (wall.Count != 0)
+            {
+                directionMap[wall.Pop()][wall.Pop()] = 0;
             }
             return false;
         }

@@ -8,8 +8,7 @@ namespace Roomba
         {
             try
             {
-                //Roomba roomba = new Roomba();
-                Test roomba = new Test();
+                Roomba roomba = new Roomba();
                 roomba.Auto();
                 Console.ReadLine();
             }
