@@ -246,6 +246,7 @@ namespace Roomba
             int move, connectMove;
             bool direction;
             bool prune = true;
+            bool none = false;
             map[a][b] = false;
             roadx.Push(a);
             roady.Push(b);
@@ -403,11 +404,15 @@ namespace Roomba
                     moveStack.Push(-1);
                     directionStack.Push(false);
                     directionMap[a - 1][b]--;
-                    if (directionMap[a - 1][b] < 2)
+                    if (directionMap[a - 1][b] == 1)
                     {
                         danger++;
                     }
-                    if (!map[a - 1][b - 1])
+                    if (map[a - 1][b - 1])
+                    {
+                        none = true;
+                    }
+                    else
                     {
                         preConnect.Enqueue(a - 1);
                         preConnect.Enqueue(b - 1);
@@ -418,44 +423,85 @@ namespace Roomba
                     moveStack.Push(-1);
                     directionStack.Push(true);
                     directionMap[a][b - 1]--;
-                    if (directionMap[a][b - 1] < 2)
+                    if (directionMap[a][b - 1] == 1)
                     {
                         danger++;
                     }
-                    if (!map[a + 1][b - 1])
+                    if (map[a + 1][b - 1])
+                    {
+                        none = true;
+                    }
+                    else
                     {
                         preConnect.Enqueue(a + 1);
                         preConnect.Enqueue(b - 1);
+                        none = false;
                     }
+                }
+                else if (none)
+                {
+                    preConnect.Enqueue(a);
+                    preConnect.Enqueue(b - 1);
+                    none = false;
                 }
                 if (map[a + 1][b])
                 {
                     moveStack.Push(1);
                     directionStack.Push(false);
                     directionMap[a + 1][b]--;
-                    if (directionMap[a + 1][b] < 2)
+                    if (directionMap[a + 1][b] == 1)
                     {
                         danger++;
                     }
-                    if (!map[a + 1][b + 1])
+                    if (map[a + 1][b + 1])
+                    {
+                        none = true;
+                    }
+                    else
                     {
                         preConnect.Enqueue(a + 1);
                         preConnect.Enqueue(b + 1);
+                        none = false;
                     }
+                }
+                else if (none)
+                {
+                    preConnect.Enqueue(a + 1);
+                    preConnect.Enqueue(b);
+                    none = false;
                 }
                 if (map[a][b + 1])
                 {
                     moveStack.Push(1);
                     directionStack.Push(true);
                     directionMap[a][b + 1]--;
-                    if (directionMap[a][b + 1] < 2)
+                    if (directionMap[a][b + 1] == 1)
                     {
                         danger++;
                     }
-                    if (!map[a - 1][b + 1])
+                    if (map[a - 1][b + 1])
+                    {
+                        none = true;
+                    }
+                    else
                     {
                         preConnect.Enqueue(a - 1);
                         preConnect.Enqueue(b + 1);
+                        none = false;
+                    }
+                }
+                else if (none)
+                {
+                    preConnect.Enqueue(a);
+                    preConnect.Enqueue(b + 1);
+                    none = false;
+                }
+                if (none)
+                {
+                    if (!map[a - 1][b])
+                    {
+                        preConnect.Enqueue(a - 1);
+                        preConnect.Enqueue(b);
                     }
                 }
                 while (preConnect.Count != 0)
@@ -468,7 +514,6 @@ namespace Roomba
                         {
                             if (starty == b + 1)
                             {
-
                                 starty -= 1;
                                 connectx = startx;
                                 connecty = starty;
