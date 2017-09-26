@@ -17,7 +17,8 @@ namespace Roomba
         int Y;
         Stack<char> mapArray;
         bool[][] _map;
-        Stack<int> restPoints;
+        Stack<int> restPointX;
+        Stack<int> restPointY;
         int restCount;
         int _a;
         int _b;
@@ -27,10 +28,12 @@ namespace Roomba
         object locker;
         int startPoint;
         string cookie;
+        bool desc;
 
         public Roomba()
         {
-            restPoints = new Stack<int>();
+            restPointX = new Stack<int>();
+            restPointY = new Stack<int>();
             if (!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["threadCount"], out threadCount))
             {
                 threadCount = 2;
@@ -43,6 +46,10 @@ namespace Roomba
             if (!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["level"], out level))
             {
                 level = 0;
+            }
+            if (!bool.TryParse(System.Configuration.ConfigurationManager.AppSettings["desc"], out desc))
+            {
+                desc = false;
             }
             cookie = System.Configuration.ConfigurationManager.AppSettings["cookie"];
         }
@@ -92,7 +99,8 @@ namespace Roomba
                 Y = y + 2;
                 mapArray = new Stack<char>(mapStr);
                 _map = new bool[X][];
-                restPoints.Clear();
+                restPointX.Clear();
+                restPointY.Clear();
                 for (int i = x; i > 0; i--)
                 {
                     _map[i] = new bool[Y];
@@ -101,22 +109,27 @@ namespace Roomba
                         if (mapArray.Pop() == '0')
                         {
                             _map[i][j] = true;
-                            restPoints.Push(j);
-                            restPoints.Push(i);
+                            restPointX.Push(i);
+                            restPointY.Push(j);
                         }
                     }
                 }
                 _map[0] = new bool[Y];
                 _map[X - 1] = new bool[Y];
-                restCount = restPoints.Count / 2;
+                restCount = restPointX.Count;
+                if (desc)
+                {
+                    restPointX = new Stack<int>(restPointX);
+                    restPointY = new Stack<int>(restPointY);
+                }
                 if (startPoint == 0)
                 {
                     startPoint = restCount;
                 }
-                while (restPoints.Count / 2 > startPoint)
+                while (restPointX.Count > startPoint)
                 {
-                    restPoints.Pop();
-                    restPoints.Pop();
+                    restPointX.Pop();
+                    restPointY.Pop();
                 }
                 startPoint = 0;
                 List<Task> taskList = new List<Task>();
@@ -177,11 +190,11 @@ namespace Roomba
             {
                 lock (locker)
                 {
-                    if (restPoints.Count > 0)
+                    if (restPointX.Count > 0)
                     {
-                        a = restPoints.Pop();
-                        b = restPoints.Pop();
-                        Console.WriteLine("point x:{0},y:{1} start, {2} points rest, {3}", a, b, restPoints.Count / 2, DateTime.Now.ToString("HH:mm:ss"));
+                        a = restPointX.Pop();
+                        b = restPointY.Pop();
+                        Console.WriteLine("point x:{0},y:{1} start, {2} points rest, {3}", a, b, restPointX.Count, DateTime.Now.ToString("HH:mm:ss"));
                     }
                     else
                     {
